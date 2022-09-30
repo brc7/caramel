@@ -16,6 +16,9 @@ class SparseModulo2System:
         self._equations = {}
         self._constants = {}
         self._solution_size = solution_size
+        # The "degree" of a variable is a graph-theoretic term referring to the
+        # number of equations in which the variable participates.
+        self._degree = np.zeros(self._solution_size)
 
     def addEquation(self,
                     equation_id: int,
@@ -32,10 +35,17 @@ class SparseModulo2System:
                                  f"{self._solution_size:d}.")
         self._equations[equation_id] = participating_variables
         self._constants[equation_id] = constant
+        for var in participating_variables:
+            self._degree[var] += 1
 
     def getEquation(self,
                     equation_id: int):
         return (self._equations[equation_id], self._constants[equation_id])
+
+    @property
+    def shape(self):
+        # Returns (num_equations, num_variables). Read-only.
+        return (len(self._equations), self._solution_size)
 
 
 class DenseModulo2System:
@@ -82,19 +92,45 @@ class DenseModulo2System:
                     equation_id: int):
         return (self._equations[equation_id], self._constants[equation_id])
 
-    def _update_bitvector(self, backing_array, bit_index, value=1):
+    @property
+    def shape(self):
+        # Returns (num_equations, num_variables). Read-only.
+        return (len(self._equations), self._solution_size)
+
+    @property
+    def dtype(self):
+        # Returns the dtype of the backing array. Read-only.
+        return self._backing_type
+
+    def xorEquations(self,
+                     equation_to_modify: int,
+                     equation_to_xor: int):
+        # Computes the XOR of the equation and constant associated with
+        # equation_to_modify and equation_to_xor, and places the result into 
+        # equation_to_modify.
+        c_to_modify = self._constants[equation_to_modify]
+        c_to_xor = self._constants[equation_to_xor]
+        new_c = np.bitwise_xor(c_to_modify, c_to_xor)
+
+        new_equation = np.bitwise_xor(self._equations[equation_to_modify],
+                                      self._equations[equation_to_xor])
+
+        self._equations[equation_to_modify] = new_equation
+        self._constants[equation_to_modify] = new_c
+
+    def _update_bitvector(self, array, bit_index, value=1):
         chunk_id = bit_index // self._num_variables_per_chunk
-        if chunk_id >= len(backing_array):
+        if chunk_id >= len(array):
             raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
-                             f"array of size {len(backing_array):d}.")
+                             f"array of size {len(array):d}.")
         # TODO: Replace and test with more efficient, and equivalent
         # num_left_shifts = bit_id - chunk_id * self._num_variables_per_chunk
         num_left_shifts = bit_index % self._num_variables_per_chunk
         chunk = np.array([1], dtype=self._backing_type)
         chunk = np.left_shift(chunk, num_left_shifts)
         if value:
-            backing_array[chunk_id] = np.bitwise_or(backing_array[chunk_id], chunk)
+            array[chunk_id] = np.bitwise_or(array[chunk_id], chunk)
         else:
             chunk = np.bitwise_not(chunk)
-            backing_array[chunk_id] = np.bitwise_and(backing_array[chunk_id], chunk)
-        return backing_array
+            array[chunk_id] = np.bitwise_and(array[chunk_id], chunk)
+        return array
