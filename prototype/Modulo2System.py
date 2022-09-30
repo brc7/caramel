@@ -30,12 +30,12 @@ class SparseModulo2System:
             if var >= self._solution_size:
                 raise ValueError(f"Invalid variable id: id {var:d} >= "
                                  f"{self._solution_size:d}.")
-        self._equations{equation_id} = participating_variables
-        self._constants{equation_id} = constant
+        self._equations[equation_id] = participating_variables
+        self._constants[equation_id] = constant
 
     def getEquation(self,
                     equation_id: int):
-        return (self._equations{equation_id}, self._constants{equation_id})
+        return (self._equations[equation_id], self._constants[equation_id])
 
 
 class DenseModulo2System:
@@ -59,7 +59,8 @@ class DenseModulo2System:
     
     def addEquation(self,
                     equation_id: int,
-                    participating_variables: List[int]):
+                    participating_variables: List[int], 
+                    constant: int):
         if constant < 0 or constant > 1:
             raise ValueError(f"Constant must be 0 or 1.")
         if equation_id in self._equations:
@@ -69,31 +70,31 @@ class DenseModulo2System:
             if var >= self._solution_size:
                 raise ValueError(f"Invalid variable id: id {var:d} >= "
                                  f"{self._solution_size:d}.")
-        backing_array = np.zeros(size=self._bitvector_size,
+        backing_array = np.zeros(shape=self._bitvector_size,
                                  dtype=self._backing_type)
         # Set the correct bits in the backing array.
         for var in participating_variables:
             backing_array = self._update_bitvector(backing_array, var)
-        self._equations{equation_id} = backing_array
-        self._constants{equation_id} = constant
+        self._equations[equation_id] = backing_array
+        self._constants[equation_id] = constant
 
     def getEquation(self,
                     equation_id: int):
-        return (self._equations{equation_id}, self._constants{equation_id})
+        return (self._equations[equation_id], self._constants[equation_id])
 
     def _update_bitvector(self, backing_array, bit_index, value=1):
-        chunk_id = bit_id // self._num_variables_per_chunk
+        chunk_id = bit_index // self._num_variables_per_chunk
         if chunk_id >= len(backing_array):
             raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
                              f"array of size {len(backing_array):d}.")
         # TODO: Replace and test with more efficient, and equivalent
         # num_left_shifts = bit_id - chunk_id * self._num_variables_per_chunk
-        num_left_shifts = bit_id % self._num_variables_per_chunk
+        num_left_shifts = bit_index % self._num_variables_per_chunk
         chunk = np.array([1], dtype=self._backing_type)
         chunk = np.left_shift(chunk, num_left_shifts)
         if value:
-            backing_array[chunk_id] = np.bitwise_or(array[chunk_id], chunk)
+            backing_array[chunk_id] = np.bitwise_or(backing_array[chunk_id], chunk)
         else:
             chunk = np.bitwise_not(chunk)
-            backing_array[chunk_id] = np.bitwise_and(array[chunk_id], chunk)
-        return array
+            backing_array[chunk_id] = np.bitwise_and(backing_array[chunk_id], chunk)
+        return backing_array

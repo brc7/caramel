@@ -38,6 +38,12 @@ def construct_modulo2_system(keys, encoded_values):
     return system
 
 
+# MULTIPLICATION IS AN AND
+# ADDITION IS AN XOR
+def regular_gaussian_elimination(dense_system, relevant_equation_ids):
+    
+    pass
+
 
 def construct_csf(keys, values):
     """
@@ -69,7 +75,7 @@ def construct_csf(keys, values):
 
     lazy_gaussian_elimination()
 
-    regular_gaussian_elimination()
+    regular_gaussian_elimination(dense_system, relevant_equation_ids)
 
     back_substitution() # how?? what datastructures to keep track of everything?
 
