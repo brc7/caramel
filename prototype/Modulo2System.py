@@ -102,6 +102,11 @@ class DenseModulo2System:
         # Returns the dtype of the backing array. Read-only.
         return self._backing_type
 
+    @property
+    def bitvector_size(self):
+        # Returns the size of the numpy bitvector 
+        return self._bitvector_size
+        
     def xorEquations(self,
                      equation_to_modify: int,
                      equation_to_xor: int):
@@ -117,6 +122,29 @@ class DenseModulo2System:
 
         self._equations[equation_to_modify] = new_equation
         self._constants[equation_to_modify] = new_c
+
+    def getFirstVar(self, equation_id: int) -> int:
+        # returns the first non-zero bit index in equation_id's equation
+    
+        # TODO: np.where searches the whole array, and doesnt stop at the first 
+        # sight of nonzero, can we optimize this?
+        equation = self._equations[equation_id]
+        first_nonzero_chunk_id = np.where(equation != 0)[0][0]
+        chunk = equation[first_nonzero_chunk_id]
+
+        #TODO: theres definitely a better way to do this
+        index_of_first_set_bit_in_chunk = 32 - (math.log2(chunk & -chunk) + 1)
+        return first_nonzero_chunk_id * 32 + index_of_first_set_bit_in_chunk
+
+    def isUnsolvable(self, equation_id: int) -> bool:
+        # returns if the equation is all zeros and the constant is not 0
+        isEmpty = not self._equations[equation_id].any()
+        return isEmpty and self._constants[equation_id] != 0
+
+    def isIdentity(self, equation_id: int) -> bool:
+        # returns if the equation is all zeros and the constant IS 0
+        isEmpty = not self._equations[equation_id].any()
+        return isEmpty and self._constants[equation_id] == 0
 
     def _update_bitvector(self, array, bit_index, value=1):
         chunk_id = bit_index // self._num_variables_per_chunk
