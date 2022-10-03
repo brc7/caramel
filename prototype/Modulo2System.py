@@ -138,6 +138,9 @@ class DenseModulo2System:
 
     def getFirstVar(self, equation_id: int) -> int:
         # returns the first non-zero bit index in equation_id's equation
+
+        # TODO fails if equation is all zeros. should we return np.iinfo(self._backing_type)?
+        # how should we handle max values in the gaussian elimination?
     
         # TODO: np.where searches the whole array, and doesnt stop at the first 
         # sight of nonzero, can we optimize this?
