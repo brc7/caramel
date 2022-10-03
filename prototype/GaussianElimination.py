@@ -15,42 +15,52 @@ def scalarProduct(array1, array2):
     return sum
 
 
-def gaussian_elimination(dense_system, relevant_equation_ids):
+def gaussian_elimination(dense_system, relevant_equation_ids, verbose=False):
     first_vars = {}
     for equation_id in relevant_equation_ids:
         first_vars[equation_id] = dense_system.getFirstVar(equation_id)
     
     for i in range(len(relevant_equation_ids) - 1):
         for j in range(i + 1, len(relevant_equation_ids)):
-            eqJ = relevant_equation_ids[j]
             eqI = relevant_equation_ids[i]
+            eqJ = relevant_equation_ids[j]
+
+            if verbose:
+                print(f"\nStarting Iteration looking at equations {eqI} and {eqJ}")
+                print(f"\nStarting Iteration: I:{bin(dense_system.getEquation(eqI)[0][0])} and J:{bin(dense_system.getEquation(eqJ)[0][0])}")
 
             if first_vars[eqI] == first_vars[eqJ]:
-                dense_system.xorEquations(eqI, eqJ)
+                print("First vars equal, XOR the second with the first and replace the second")
+                dense_system.xorEquations(eqJ, eqI)
+                print(f"After Xor: I:{bin(dense_system.getEquation(eqI)[0][0])} and J:{bin(dense_system.getEquation(eqJ)[0][0])}")
+
                 if dense_system.isUnsolvable(eqI):
                     raise ValueError("Unsolvable System")
                 #TODO if dense_system.isIdentity(eqI) continue the outer for loop
-                first_vars[eqI] = dense_system.getFirstVar(eqI)
+                first_vars[eqJ] = dense_system.getFirstVar(eqJ)
+                print(f"new first var of J: {first_vars[eqJ]}")
 
-            if first_vars[eqI] > first_vars[eqJ]:
-                dense_system.swap(eqI, eqJ)
+            if first_vars[eqJ] > first_vars[eqI]:
+                print(f"swapping equations: I:{bin(dense_system.getEquation(eqI)[0][0])} and J:{bin(dense_system.getEquation(eqJ)[0][0])}")
+                dense_system.swapEquations(eqI, eqJ)
     
-    # TODO should we put the solution in the system itself?
     solution = np.zeros(shape=dense_system.bitvector_size, dtype=dense_system.dtype)
-    for i in range(len(relevant_equation_ids), -1, -1):
+    for i in range(len(relevant_equation_ids) - 1, -1, -1):
         equation_id = relevant_equation_ids[i]
+        equation, constant = dense_system.getEquation(equation_id)
+        print(f"i: {i}, equation_id: {equation_id}, equation: {bin(equation[0])}")
         if dense_system.isIdentity(equation_id): 
             continue
-        equation, constant = dense_system.getEquation(equation_id)
-        solution[first_vars[equation_id]] = np.bitwise_xor(constant, scalarProduct(equation, solution))
+        if np.bitwise_xor(constant, scalarProduct(equation, solution)) == 1:
+            solution = dense_system.update_bitvector(solution, first_vars[equation_id])
     
     return solution
 
 
 def test_gaussian_elimination():
-    matrix = [[1, 1, 1],
-              [0, 1, 1],
-              [1, 0, 1]]
+    matrix = [[0, 1, 2],
+              [1, 2],
+              [0, 2]]
     constants = [1, 0, 1]
     solution = [1, 0, 0]
 
@@ -60,20 +70,25 @@ def test_gaussian_elimination():
                            participating_variables=vars, 
                            constant=constants[i])
 
-    print(gaussian_elimination(system, [0, 1, 2]))
+    assert bin(gaussian_elimination(system, [0, 1, 2])[0]) == "0b1"
 
 
-# def test_gaussian_elimination1():
-#     matrix = [[0, 0, 1],
-#               [1, 1, 1]]
-#     constants = [1, 0]
-#     solution = [1, 0, 1]
+def test_gaussian_elimination1():
+    matrix = [[1, 2],
+              [0, 1, 2],
+              [0, 2]]
+    constants = [0, 1, 1]
+    solution = [1, 0, 0]
 
-#     system = DenseModulo2System(solution_size=len(solution))
-#     for i, vars in enumerate(matrix):
-#         system.addEquation(equation_id=i, 
-#                            participating_variables=vars, 
-#                            constant=constants[i])
+    system = DenseModulo2System(solution_size=len(solution))
+    for i, vars in enumerate(matrix):
+        system.addEquation(equation_id=i, 
+                           participating_variables=vars, 
+                           constant=constants[i])
 
-#     print(regular_gaussian_elimination(system, [0, 1, 2]))
+    assert bin(gaussian_elimination(system, [0, 1, 2])[0]) == "0b1"
 
+
+if __name__ == "__main__":
+    test_gaussian_elimination()
+    test_gaussian_elimination1()

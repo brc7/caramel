@@ -1,3 +1,5 @@
+
+
 def construct_modulo2_system(keys, encoded_values):
     """
     Constructs a binary system of linear equations to solve for each bit of the 
@@ -36,6 +38,7 @@ def construct_modulo2_system(keys, encoded_values):
     return system
 
 
+
 def construct_csf(keys, values):
     """
     Constructs a compressed static function. This implementation sacrifices a lot of the 
@@ -66,7 +69,7 @@ def construct_csf(keys, values):
 
     lazy_gaussian_elimination()
 
-    regular_gaussian_elimination(dense_system, relevant_equation_ids)
+    regular_gaussian_elimination()
 
     back_substitution() # how?? what datastructures to keep track of everything?
 

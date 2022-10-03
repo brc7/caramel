@@ -2,6 +2,7 @@ import spookyhash
 import numpy as np
 
 from typing import List
+import gmpy2
 
 # For usage example
 import random
@@ -84,7 +85,7 @@ class DenseModulo2System:
                                  dtype=self._backing_type)
         # Set the correct bits in the backing array.
         for var in participating_variables:
-            backing_array = self._update_bitvector(backing_array, var)
+            backing_array = self.update_bitvector(backing_array, var)
         self._equations[equation_id] = backing_array
         self._constants[equation_id] = constant
 
@@ -123,6 +124,13 @@ class DenseModulo2System:
         self._equations[equation_to_modify] = new_equation
         self._constants[equation_to_modify] = new_c
 
+    def swapEquations(self,
+                     equation_id_1: int,
+                     equation_id_2: int):
+        temp_equation = self._equations[equation_id_1]
+        self._equations[equation_id_1] = self._equations[equation_id_2]
+        self._equations[equation_id_2] = temp_equation
+
     def getFirstVar(self, equation_id: int) -> int:
         # returns the first non-zero bit index in equation_id's equation
     
@@ -132,9 +140,11 @@ class DenseModulo2System:
         first_nonzero_chunk_id = np.where(equation != 0)[0][0]
         chunk = equation[first_nonzero_chunk_id]
 
-        #TODO: theres definitely a better way to do this
-        index_of_first_set_bit_in_chunk = 32 - (math.log2(chunk & -chunk) + 1)
-        return first_nonzero_chunk_id * 32 + index_of_first_set_bit_in_chunk
+        # Using gmpy to find the index of the least significant bit. Sources:
+        # https://stackoverflow.com/questions/5520655/return-index-of-least-significant-bit-in-python
+        # https://stackoverflow.com/questions/12078277/is-this-a-bug-in-gmpy2-or-am-i-mad
+        index_of_first_set_bit_in_chunk = gmpy2.bit_scan1(gmpy2.mpz(chunk))
+        return first_nonzero_chunk_id * self._num_variables_per_chunk + index_of_first_set_bit_in_chunk
 
     def isUnsolvable(self, equation_id: int) -> bool:
         # returns if the equation is all zeros and the constant is not 0
@@ -146,7 +156,7 @@ class DenseModulo2System:
         isEmpty = not self._equations[equation_id].any()
         return isEmpty and self._constants[equation_id] == 0
 
-    def _update_bitvector(self, array, bit_index, value=1):
+    def update_bitvector(self, array, bit_index, value=1):
         chunk_id = bit_index // self._num_variables_per_chunk
         if chunk_id >= len(array):
             raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
