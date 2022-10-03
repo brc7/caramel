@@ -59,7 +59,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids):
 	# The weight is the number of sparse equations containing variable_id.
     variable_weight = np.zeros(size=num_variables)
     # The equation priority is the number of idle variables in equation_id.
-	equation_priority = np.zeros(size=num_equations)
+    equation_priority = np.zeros(size=num_equations)
 
     dense_system = DenseModulo2System(num_variables)
     var_to_equations = defaultdict([])
@@ -100,7 +100,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids):
         dtype=dense_system.dtype)
 
 	# Sorted list of variable ids, in descending weight order.
-	sorted_variable_ids = countsort_variable_ids(variable_weight,
+    sorted_variable_ids = countsort_variable_ids(variable_weight,
                                                  num_variables,
                                                  num_equations)
 
@@ -178,7 +178,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids):
                         # Perform one step of gaussian elimination.
                         dense_system.xorEquations(other_equation_id, equation_id)
     if verbose:
-    	print(f"{num_active_variables:d} active of {num_variables:d} "
+        print(f"{num_active_variables:d} active of {num_variables:d} "
               f"total variables ({num_active_variables/num_variables:.2f}%).")
         print(f"Dense equations: {dense_equation_ids}")
         print(f"Solved equations: {solved_equation_ids}")
@@ -192,12 +192,12 @@ def lazy_gaussian_elimination(sparse_system, equation_ids):
 def countsort_variable_ids(variable_weight, num_variables, num_equations):
 	# Sorts variables in descending weight order in O(num_variables + max_weight) time.
     sorted_variable_ids = list(range(num_variables))
-	counts = np.zeros(size=num_equations+1, dtype=int)
-	for variable_id in range(num_variables):
-		counts[variable_weight[variable_id]] += 1		
-	counts = np.cumsum(counts)
-	for variable_id in reversed(range(num_variables)):
-		count_idx = variable_weight[variable_id]
-		counts[count_idx] -= 1
-		sorted_variable_ids[counts[count_idx]] = variable_id
-	return sorted_variable_ids
+    counts = np.zeros(size=num_equations+1, dtype=int)
+    for variable_id in range(num_variables):
+        counts[variable_weight[variable_id]] += 1		
+    counts = np.cumsum(counts)
+    for variable_id in reversed(range(num_variables)):
+        count_idx = variable_weight[variable_id]
+        counts[count_idx] -= 1
+        sorted_variable_ids[counts[count_idx]] = variable_id
+    return sorted_variable_ids
