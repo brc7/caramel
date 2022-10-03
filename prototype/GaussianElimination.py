@@ -15,7 +15,7 @@ equation. Overall this algorithm works as follows:
         A. Check if both equations have the same first var. If so then we set 
         Bot equation equal to Bot equation XORed with the Top equation.
         B. Verify that Top equation's first var is greater than Bot equation's
-        first var. If so, swap these two equations. 
+        first var. Otherwise, swap these two equations. 
 
     3. Back-substitution. Go backwards through the matrix (from bottom to top in
     the echelon form matrix) and set the bit of the solution to whatever 
