@@ -1,3 +1,4 @@
+from pandas import array
 import spookyhash
 import numpy as np
 
@@ -131,6 +132,10 @@ class DenseModulo2System:
         self._equations[equation_id_1] = self._equations[equation_id_2]
         self._equations[equation_id_2] = temp_equation
 
+        temp_constant = self._constants[equation_id_1]
+        self._constants[equation_id_1] = self._constants[equation_id_2]
+        self._constants[equation_id_2] = temp_constant
+
     def getFirstVar(self, equation_id: int) -> int:
         # returns the first non-zero bit index in equation_id's equation
     
@@ -155,6 +160,21 @@ class DenseModulo2System:
         # returns if the equation is all zeros and the constant IS 0
         isEmpty = not self._equations[equation_id].any()
         return isEmpty and self._constants[equation_id] == 0
+
+    def equationToStr(self, equation_id: int) -> str:
+        return self.bitArrayToStr(self._equations[equation_id])
+    
+    def bitArrayToStr(self, bitarray):
+        array_str = ""
+        for chunk in bitarray:
+            # [2:] to remove the "0b" at the beginning of the bit string
+            # [::-1] to reverse it since we work with little-endian ordering
+            chunk_str = bin(chunk)[2:][::-1]
+            # we either pad to round out the current chunk or the whole solution
+            num_padding_zeroes = min(self._solution_size - len(array_str), self._num_variables_per_chunk) - len(chunk_str)
+            chunk_str += "0" * num_padding_zeroes
+            array_str += chunk_str
+        return array_str
 
     def update_bitvector(self, array, bit_index, value=1):
         chunk_id = bit_index // self._num_variables_per_chunk
