@@ -40,7 +40,7 @@ class SparseModulo2System:
 
     def getEquation(self,
                     equation_id: int):
-        return (self._equations{equation_id}, self._constants{equation_id})
+        return (self._equations[equation_id], self._constants[equation_id])
 
     @property
     def shape(self):
@@ -80,7 +80,7 @@ class DenseModulo2System:
             if var >= self._solution_size:
                 raise ValueError(f"Invalid variable id: id {var:d} >= "
                                  f"{self._solution_size:d}.")
-        backing_array = np.zeros(size=self._bitvector_size,
+        backing_array = np.zeros(shape=self._bitvector_size,
                                  dtype=self._backing_type)
         # Set the correct bits in the backing array.
         for var in participating_variables:
@@ -90,7 +90,7 @@ class DenseModulo2System:
 
     def getEquation(self,
                     equation_id: int):
-        return (self._equations{equation_id}, self._constants{equation_id})
+        return (self._equations[equation_id], self._constants[equation_id])
 
     @property
     def shape(self):
@@ -118,7 +118,7 @@ class DenseModulo2System:
         self._equations[equation_to_modify] = new_equation
         self._constants[equation_to_modify] = new_c
 
-    def _update_bitvector(self, array, bit_index, value=1):
+    def _update_bitvector(self, array, bit_id, value=1):
         chunk_id = bit_id // self._num_variables_per_chunk
         if chunk_id >= len(array):
             raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
