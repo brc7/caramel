@@ -71,7 +71,7 @@ class DenseModulo2System:
     
     def addEquation(self,
                     equation_id: int,
-                    participating_variables: List[int], 
+                    participating_variables: List[int],
                     constant: int):
         if constant < 0 or constant > 1:
             raise ValueError(f"Constant must be 0 or 1.")
