@@ -179,14 +179,14 @@ class DenseModulo2System:
             array_str += chunk_str
         return array_str
 
-    def _update_bitvector(self, array, bit_index, value=1):
-        chunk_id = bit_index // self._num_variables_per_chunk
+    def _update_bitvector(self, array, bit_id, value=1):
+        chunk_id = bit_id // self._num_variables_per_chunk
         if chunk_id >= len(array):
             raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
                              f"array of size {len(array):d}.")
         # TODO: Replace and test with more efficient, and equivalent
         # num_left_shifts = bit_id - chunk_id * self._num_variables_per_chunk
-        num_left_shifts = bit_index % self._num_variables_per_chunk
+        num_left_shifts = bit_id % self._num_variables_per_chunk
         chunk = np.array([1], dtype=self._backing_type)
         chunk = np.left_shift(chunk, num_left_shifts)
         if value:
