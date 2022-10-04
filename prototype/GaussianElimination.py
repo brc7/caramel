@@ -72,6 +72,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
 
     # TODO: how should we handle the solution?
     # Should this be a bitvector? Should we create it elsewhere and pass it in?
+    # Also should we do back-substitution externally?
     solution = np.zeros(shape=dense_system.bitvector_size, dtype=dense_system.dtype)
     for i in range(len(relevant_equation_ids) - 1, -1, -1):
         equation_id = relevant_equation_ids[i]
@@ -90,7 +91,7 @@ def scalarProduct(array1, array2):
     # returns the bitwise and of two numpy arrays (not just the integer values 
     # but the number of 1s that overlap in both array1 and array2)
     # TODO: can we optimize this function?
-    # TODO should we make a Modulo2Equation class/utils file?
+    # TODO: should we make a Modulo2Equation class/utils file?
     result = np.bitwise_and(array1, array2)
     sum = 0
     for number in result:
