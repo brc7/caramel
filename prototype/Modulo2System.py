@@ -60,7 +60,7 @@ class DenseModulo2System:
         self._constants = {}
         self._solution_size = solution_size
         # Note: Backing type must be little-endian.
-        self._backing_type = np.dtype('<i4')
+        self._backing_type = np.dtype('<u4')
 
         # Determine the size of the backing array from the solution size
         # Each variable is 1 bit, so 8 * num_bytes variables / item in array
@@ -181,6 +181,17 @@ class DenseModulo2System:
             chunk_str += "0" * num_padding_zeroes
             array_str += chunk_str
         return array_str
+
+    def systemToStr(self, equation_ids=None):
+        if equation_ids is None:
+            equation_ids = list(self._equations.keys())
+            equation_ids.sort()
+        system_str = ""
+        for equation_id in equation_ids:
+            system_str += self.equationToStr(equation_id)
+            system_str += f" | {self._constants[equation_id]:d} "
+            system_str += f"(Equation [{equation_id:d}])\n"
+        return system_str
 
     def _update_bitvector(self, array, bit_id, value=1):
         chunk_id = bit_id // self._num_variables_per_chunk
