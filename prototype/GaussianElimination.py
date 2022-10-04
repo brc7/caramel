@@ -1,5 +1,5 @@
 import numpy as np
-from Modulo2System import DenseModulo2System
+from Modulo2System import DenseModulo2System, UnsolvableSystemException
 
 '''
 We perform Gaussian Elimination by maintaining the state of each equation's 
@@ -21,7 +21,7 @@ equation. Overall this algorithm works as follows:
     the echelon form matrix) and set the bit of the solution to whatever 
     resolves the constant.
 
-Throws ValueError("Unsolvable System") if the system is unsolvable.
+Throws UnsolvableSystemException.
 '''
 
 def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
@@ -49,7 +49,8 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
                           f" XOR Bot. Bot becomes: "
                           f"{dense_system.equationToStr(bot_equation_id)}")
                 if dense_system.isUnsolvable(top_equation_id):
-                    raise ValueError("Unsolvable System")
+                    raise UnsolvableSystemException(f"Equation {equation_id:d}"
+                                f"has all coefficients = 0 but constant is 1.")
                 #TODO if dense_system.isIdentity(top_equation_id) continue the outer for loop
                 first_vars[bot_equation_id] = dense_system.getFirstVar(bot_equation_id)
 
