@@ -134,3 +134,8 @@ class DenseModulo2System:
             chunk = np.bitwise_not(chunk)
             array[chunk_id] = np.bitwise_and(array[chunk_id], chunk)
         return array
+
+
+class UnsolvableSystemException(Exception):
+    pass
+
