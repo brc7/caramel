@@ -1,4 +1,3 @@
-from pandas import array
 import spookyhash
 import numpy as np
 
@@ -203,4 +202,3 @@ class DenseModulo2System:
 
 class UnsolvableSystemException(Exception):
     pass
-
