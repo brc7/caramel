@@ -50,6 +50,8 @@ class BucketedHashStore:
             except ValueError as e:
                 if self._seed < num_attempts:
                     self._seed += 1
+                    self._key_buckets = tuple([[] for _ in range(self._num_buckets)])
+                    self._value_buckets = tuple([[] for _ in range(self._num_buckets)])
                 else:
                     raise e
 
