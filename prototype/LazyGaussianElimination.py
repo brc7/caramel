@@ -121,7 +121,6 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
             # By marking this variable as active, we must update priorities.
             for equation_id in var_to_equations[variable_id]:
                 equation_priority[equation_id] -= 1
-                # TODO: LOOK AT THIS
                 if equation_priority[equation_id] == 1:
                     sparse_equation_ids.append(equation_id)
         else:
@@ -323,7 +322,8 @@ def test_active_system(verbose=0):
     return True
 
 def test_active_with_duplicate_system(verbose=0):
-    # Tests a system that is known to be solvable, but has an active core.
+    # Tests a system that is known to be solvable, but has an active core and
+    # includes duplicate vertices in the hypergraph specification.
     num_variables = 10
     sparse_system = SparseModulo2System(num_variables)
     sparse_system.addEquation(0, [1,2,3], 1)
@@ -346,7 +346,8 @@ def test_active_with_duplicate_system(verbose=0):
     return True
 
 def test_solvable_with_duplicates_system(verbose=0):
-    # Tests a system that is known to be solvable.
+    # Tests a system that is known to be solvable, but includes duplicate
+    # vertices in the hypergraph specification.
     num_variables = 9
     sparse_system = SparseModulo2System(num_variables)
     sparse_system.addEquation(0, [0,1,2], 1)
@@ -378,6 +379,7 @@ if __name__ == '__main__':
     for n, m in hypergraph_dimensions:
         success = test_random_system(n, m, verbose=0)
 
+    # Stress test (slow)
     # N = 100000
     # M = int(1.14 * N)
     # success = test_random_system(N, M, verbose=1)
