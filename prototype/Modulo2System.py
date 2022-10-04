@@ -2,6 +2,7 @@ import spookyhash
 import numpy as np
 
 from typing import List
+import gmpy2
 
 # For usage example
 import random
@@ -102,6 +103,11 @@ class DenseModulo2System:
         # Returns the dtype of the backing array. Read-only.
         return self._backing_type
 
+    @property
+    def bitvector_size(self):
+        # Returns the size of the numpy bitvector 
+        return self._bitvector_size
+        
     def xorEquations(self,
                      equation_to_modify: int,
                      equation_to_xor: int):
@@ -117,6 +123,64 @@ class DenseModulo2System:
 
         self._equations[equation_to_modify] = new_equation
         self._constants[equation_to_modify] = new_c
+
+    def swapEquations(self,
+                     equation_id_1: int,
+                     equation_id_2: int):
+        temp_equation = self._equations[equation_id_1]
+        self._equations[equation_id_1] = self._equations[equation_id_2]
+        self._equations[equation_id_2] = temp_equation
+
+        temp_constant = self._constants[equation_id_1]
+        self._constants[equation_id_1] = self._constants[equation_id_2]
+        self._constants[equation_id_2] = temp_constant
+
+    def getFirstVar(self, equation_id: int) -> int:
+        # returns the first non-zero bit index in equation_id's equation
+
+        # TODO fails if equation is all zeros. should we return 
+        # np.iinfo(self._backing_type).max? how should we handle max values in 
+        # the gaussian elimination?
+        if not self._equations[equation_id].any():
+            raise ValueError(f"Equation {equation_id:d} has all zeros, "
+                             f"can't get first var.")
+    
+        # TODO: np.where searches the whole array, and doesnt stop at the first 
+        # sight of nonzero, can we optimize this?
+        equation = self._equations[equation_id]
+        first_nonzero_chunk_id = np.where(equation != 0)[0][0]
+        chunk = equation[first_nonzero_chunk_id]
+
+        # Using gmpy to find the index of the least significant bit. Sources:
+        # https://stackoverflow.com/questions/5520655/return-index-of-least-significant-bit-in-python
+        # https://stackoverflow.com/questions/12078277/is-this-a-bug-in-gmpy2-or-am-i-mad
+        index_of_first_set_bit_in_chunk = gmpy2.bit_scan1(gmpy2.mpz(chunk))
+        return first_nonzero_chunk_id * self._num_variables_per_chunk + index_of_first_set_bit_in_chunk
+
+    def isUnsolvable(self, equation_id: int) -> bool:
+        # returns if the equation is all zeros and the constant is not 0
+        isEmpty = not self._equations[equation_id].any()
+        return isEmpty and self._constants[equation_id] != 0
+
+    def isIdentity(self, equation_id: int) -> bool:
+        # returns if the equation is all zeros and the constant IS 0
+        isEmpty = not self._equations[equation_id].any()
+        return isEmpty and self._constants[equation_id] == 0
+
+    def equationToStr(self, equation_id: int) -> str:
+        return self.bitArrayToStr(self._equations[equation_id])
+    
+    def bitArrayToStr(self, bitarray):
+        array_str = ""
+        for chunk in bitarray:
+            # [2:] to remove the "0b" at the beginning of the bit string
+            # [::-1] to reverse it since we work with little-endian ordering
+            chunk_str = bin(chunk)[2:][::-1]
+            # we either pad to round out the current chunk or the whole solution
+            num_padding_zeroes = min(self._solution_size - len(array_str), self._num_variables_per_chunk) - len(chunk_str)
+            chunk_str += "0" * num_padding_zeroes
+            array_str += chunk_str
+        return array_str
 
     def _update_bitvector(self, array, bit_id, value=1):
         chunk_id = bit_id // self._num_variables_per_chunk
@@ -138,4 +202,3 @@ class DenseModulo2System:
 
 class UnsolvableSystemException(Exception):
     pass
-
