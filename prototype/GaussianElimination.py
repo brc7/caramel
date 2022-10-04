@@ -80,7 +80,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
         if dense_system.isIdentity(equation_id): 
             continue
         if np.bitwise_xor(constant, scalarProduct(equation, solution)) == 1:
-            solution = dense_system.update_bitvector(solution, first_vars[equation_id])
+            solution = dense_system._update_bitvector(solution, first_vars[equation_id])
     
     return solution
 

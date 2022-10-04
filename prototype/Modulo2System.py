@@ -86,7 +86,7 @@ class DenseModulo2System:
                                  dtype=self._backing_type)
         # Set the correct bits in the backing array.
         for var in participating_variables:
-            backing_array = self.update_bitvector(backing_array, var)
+            backing_array = self._update_bitvector(backing_array, var)
         self._equations[equation_id] = backing_array
         self._constants[equation_id] = constant
 
@@ -179,7 +179,7 @@ class DenseModulo2System:
             array_str += chunk_str
         return array_str
 
-    def update_bitvector(self, array, bit_index, value=1):
+    def _update_bitvector(self, array, bit_index, value=1):
         chunk_id = bit_index // self._num_variables_per_chunk
         if chunk_id >= len(array):
             raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
@@ -195,3 +195,8 @@ class DenseModulo2System:
             chunk = np.bitwise_not(chunk)
             array[chunk_id] = np.bitwise_and(array[chunk_id], chunk)
         return array
+
+
+class UnsolvableSystemException(Exception):
+    pass
+
