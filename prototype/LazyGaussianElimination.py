@@ -60,9 +60,15 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     num_equations, num_variables = sparse_system.shape
     var_to_equations, equation_priority, variable_weight, dense_system = \
         construct_dense_system(sparse_system, equation_ids)
+    
+    if verbose >= 2:
+        print(f"System ({num_equations} equations, {num_variables} variables)")
+    if verbose >= 3:
+        print(dense_system.systemToStr())
 
     # List of sparse equations with priority 0 or 1. Probably needs a re-name.
-    sparse_equation_ids = []
+    sparse_equation_ids = [equation_id for equation_id in equation_ids
+                           if equation_priority[equation_id] <= 1]
     # List of dense equations with entirely active variables.
     dense_equation_ids = []
     # Equations that define a solved variable in terms of active variables.
@@ -86,6 +92,14 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     num_remaining_equations = num_equations
 
     while(num_remaining_equations > 0):
+        if verbose >= 3:
+            print(f"Solved variable IDs ({len(solved_variable_ids)} variables): ", " ".join([f"{v}" for v in sorted(solved_variable_ids)]))
+            print(f"Idle variable IDs ({len(sorted_variable_ids)} variables):", " ".join([f"{v}({variable_weight[v]})" for v in sorted(sorted_variable_ids)]))
+            # print(f"Active variable IDs ({len(active_variable_ids)} variables):", " ".join([f"{v}" for v in sorted(active_variable_ids)]))
+            print(f"Solved equations ({len(solved_equation_ids)} equations): ", solved_equation_ids)
+            print(f"Active equations ({len(dense_equation_ids)} equations): ", dense_equation_ids)
+            print("System: ")
+            print(dense_system.systemToStr())
         if not sparse_equation_ids:
             # If there are no sparse equations with priority 0 or 1, then
             # we make another variable active and see if this status changes.
@@ -102,10 +116,12 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
             dense_system._update_bitvector(idle_variable_indicator,
                                            variable_id,
                                            value=0)
+            # active_variable_ids.append(variable_id)
             num_active_variables += 1
             # By marking this variable as active, we must update priorities.
             for equation_id in var_to_equations[variable_id]:
                 equation_priority[equation_id] -= 1
+                # TODO: LOOK AT THIS
                 if equation_priority[equation_id] == 1:
                     sparse_equation_ids.append(equation_id)
         else:
@@ -128,6 +144,9 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                     raise UnsolvableSystemException(f"Equation {equation_id:d}"
                                      f"has all coefficients = "
                                      f"0 but constant is 1.")
+                else:
+                    if verbose >= 2:
+                        print(f"Equation {equation_id:d} is an identity.")
                 # The remaining case corresponds to an identity equation
                 # (which is empty, but so is the output so it's fine).
             elif equation_priority[equation_id] == 1:
@@ -166,7 +185,8 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                                                   equation_id)
     if verbose >= 1:
         print(f"{num_active_variables:d} active of {num_variables:d} "
-              f"total variables ({num_active_variables/num_variables:.2f}%).")
+              f"total variables ({100*num_active_variables/num_variables:.2f}%).")
+    if verbose >= 2:
         print(f"Dense equations: {dense_equation_ids}")
         print(f"Solved equations: {solved_equation_ids}")
         print(f"Solved variables: {solved_variable_ids}")
@@ -223,11 +243,14 @@ def countsort_variable_ids(variable_weight, num_variables, num_equations):
 def test_random_system(num_equations, num_variables, verbose=0):
     sparse_system = SparseModulo2System(num_variables)
     equation_ids = list(range(num_equations))
+    if verbose >= 1:
+        print('Constructing linear system...')
     for equation_id in equation_ids:
         variables = [random.randrange(0, num_variables) for _ in range(3)]
         constant = random.choice([0,1])
         sparse_system.addEquation(equation_id, variables, constant)
-
+    if verbose >= 1:
+        print('Solving linear system...')
     try:
         state = lazy_gaussian_elimination(sparse_system,
                                         equation_ids,
@@ -299,8 +322,62 @@ def test_active_system(verbose=0):
         return False
     return True
 
+def test_active_with_duplicate_system(verbose=0):
+    # Tests a system that is known to be solvable, but has an active core.
+    num_variables = 10
+    sparse_system = SparseModulo2System(num_variables)
+    sparse_system.addEquation(0, [1,2,3], 1)
+    sparse_system.addEquation(1, [3,4,5], 1)
+    sparse_system.addEquation(2, [4,5,6], 0)
+    sparse_system.addEquation(3, [6,7,8], 1)
+    sparse_system.addEquation(4, [5,8,9], 0)
+    sparse_system.addEquation(5, [0,8,9], 1)
+    sparse_system.addEquation(6, [2,8,9], 1)
+    sparse_system.addEquation(7, [0,7,9], 1)
+    sparse_system.addEquation(8, [1,7,9], 0)
+    sparse_system.addEquation(9, [1,2,9], 0)
+    equation_ids = [0,1,2,3,4,5,6,7,8,9]
+    try: 
+        state = lazy_gaussian_elimination(sparse_system,
+                                          equation_ids,
+                                          verbose=verbose)
+    except UnsolvableSystemException as e:
+        return False
+    return True
+
+def test_solvable_with_duplicates_system(verbose=0):
+    # Tests a system that is known to be solvable.
+    num_variables = 9
+    sparse_system = SparseModulo2System(num_variables)
+    sparse_system.addEquation(0, [0,1,2], 1)
+    sparse_system.addEquation(1, [2,3,4], 1)
+    sparse_system.addEquation(2, [3,4,5], 0)
+    sparse_system.addEquation(3, [5,6,7], 1)
+    sparse_system.addEquation(4, [0,8,8], 1)
+    equation_ids = [0,1,2,3,4]
+
+    try: 
+        state = lazy_gaussian_elimination(sparse_system,
+                                          equation_ids,
+                                          verbose=verbose)
+    except UnsolvableSystemException as e:
+        return False
+    return True
+
 
 if __name__ == '__main__':
     test_unsolvable_pair(verbose=2)
     test_solvable_system(verbose=2)
     test_active_system(verbose=2)
+    test_solvable_with_duplicates_system(verbose=2)
+    test_active_with_duplicate_system(verbose=2)
+
+    hypergraph_dimensions = [(random.randint(10,100),random.randint(10,100))
+                            for _ in range(1000)]
+
+    for n, m in hypergraph_dimensions:
+        success = test_random_system(n, m, verbose=0)
+
+    # N = 100000
+    # M = int(1.14 * N)
+    # success = test_random_system(N, M, verbose=1)
