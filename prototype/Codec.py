@@ -87,14 +87,13 @@ def make_canonical_huffman(values, verbose = True):
     frequency_map = calculate_frequencies(values)
     symbol_frequency_pairs = sorted(frequency_map.items(), key=lambda x: (x[1], x[0]))
     codeword_lengths = min_redundancy_codeword_lengths([x[1] for x in symbol_frequency_pairs])
-    print(symbol_frequency_pairs)
-    print(codeword_lengths)
 
     # reverse because we should do code assignment in non-decreasing order of 
     # bit length instead of frequency
     symbol_frequency_pairs.reverse()
     codeword_lengths.reverse()    
 
+    # TODO add length limiting?
     codedict = {}
     code = 0
     current_length = codeword_lengths[0]
