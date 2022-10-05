@@ -14,7 +14,7 @@ def min_redundancy_codeword_lengths(frequencies):
     """
     frequencies: list of symbol frequencies sorted in non-decreasing order, 
         first by frequency, then by symbol. Its important to sort by symbol as
-        a tiebreaker so the decoder can 
+        a tiebreaker so the decoder can reconstruct the codes
     returns: the expected lengths of codewords in huffman encoding
 
     Algorithm described in: http://hjemmesider.diku.dk/~jyrki/Paper/WADS95.pdf
@@ -85,7 +85,9 @@ def min_redundancy_codeword_lengths(frequencies):
 
 def make_canonical_huffman(values, verbose = True):
     frequency_map = calculate_frequencies(values)
-    symbol_frequency_pairs = sorted(frequency_map.items(), key=lambda x: (x[1], x[0]))
+    # we sort in non-decreasing order, first by frequency then by symbol. 
+    # this is required for the decoder to reconstruct the codes
+    symbol_frequency_pairs = sorted(frequency_map.items(), key=lambda sym_freq: (sym_freq[1], sym_freq[0]))
     codeword_lengths = min_redundancy_codeword_lengths([x[1] for x in symbol_frequency_pairs])
 
     # reverse because we should do code assignment in non-decreasing order of 
