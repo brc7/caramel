@@ -5,8 +5,8 @@ from bitarray.util import canonical_huffman, canonical_decode, int2ba
 def calculate_frequencies(symbols):
     # returns a map from symbol to frequency
     frequency_map = defaultdict(int)
-    for value in values:
-        frequency_map[value] += 1
+    for symbol in symbols:
+        frequency_map[symbol] += 1
     return frequency_map
 
 
@@ -83,8 +83,8 @@ def min_redundancy_codeword_lengths(frequencies):
     return A
 
 
-def make_canonical_huffman(values, verbose = False):
-    frequency_map = calculate_frequencies(values)
+def make_canonical_huffman(symbols, verbose = False):
+    frequency_map = calculate_frequencies(symbols)
     # we sort in non-decreasing order, first by frequency then by symbol. 
     # this is required for the decoder to reconstruct the codes
     symbol_frequency_pairs = sorted(frequency_map.items(), key=lambda sym_freq: (sym_freq[1], sym_freq[0]))
@@ -128,5 +128,5 @@ def test_canonical_huffman(values):
 
 if __name__ == "__main__":
     for i in range(100):
-        values = np.random.randint(0, 20, size=30)    
-        test_canonical_huffman(values)
+        symbols = np.random.randint(0, 20, size=30)    
+        test_canonical_huffman(symbols)
