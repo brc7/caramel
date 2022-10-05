@@ -1,22 +1,24 @@
 from prototype.BucketedHashStore import BucketedHashStore
 from prototype.Codec import make_canonical_huffman
-from prototype.HypergraphPeeler import peel_hypergraph
-from prototype.LazyGaussianElimination import lazy_gaussian_elimination
-from prototype.GaussianElimination import gaussian_elimination
-from prototype.Modulo2System import DenseModulo2System, SparseModulo2System
+from prototype.Modulo2System import DenseModulo2System, SparseModulo2System, UnsolvableSystemException
+import math
+import spookyhash
 
-def construct_modulo2_system(key_hashes, encoded_values):
+def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=False):
     """
     Constructs a binary system of linear equations to solve for each bit of the 
     encoded values for each key.
 
 	Arguments:
-		keys: An iterable collection of N unique hashes.
+		key_hashes: An iterable collection of N unique hashes.
+        values: An interable collection of N values corresponding to key_hashes
 		encoded_values: An iterable collection of N bitarrays, representing the 
             encoded values. 
+        seed: A seed for hashing. If callling construct_modulo2_system again 
+            after a failed solve attempt, should increment this seed by 3.
 
 	Returns:
-		A tuple of equation, value, ...???
+		SparseModulo2System to solve for each key's encoded bits.
     """
 
     # This is a constant multiplier on the number of variables based on the 
@@ -25,30 +27,42 @@ def construct_modulo2_system(key_hashes, encoded_values):
     # more memory, we can omit lazy gaussian elimination and set delta to 1.23
     DELTA = 1.10 
 
-    num_equations = sum(bitarray.count(1) + bitarray.count(0) for bitarray in encoded_values)
-    num_variables = num_equations * DELTA
+    num_equations = sum(len(bitarray) for bitarray in codedict.values())
+    num_variables = math.ceil(num_equations * DELTA)
 
-    system = SparseModulo2System(num_variables)
+    sparse_system = SparseModulo2System(num_variables)
     
+    equation_id = 0
     for i, key_hash in enumerate(key_hashes):
 
+        start_var_locations = []
+        for _ in range(3):
+            #TODO lets do sebastiano's trick here instead of modding
+            #TODO lets write a custom hash function that generates three 64 bit 
+            # hashes instead of hashing 3 times
+            start_var_locations.append(
+                spookyhash.hash64(int.to_bytes(key_hash, 64, "big"), seed) % num_variables
+            )
+            seed += 1
         
+        if verbose:
+            print(f"Constructing Equations for value: {values[i]} with code {codedict[values[i]]}")
 
-        # hash key with 3 different hash functions, modded to the length of each equation
-        # create an equation with all 0s except in the 3 locations specified by the hash, 
-        # where there will be 1s
+        for offset, bit in enumerate(codedict[values[i]]):
+            participating_variables = []
+            for start_var_location in start_var_locations:
+                var_location = start_var_location + offset
+                if var_location >= num_variables:
+                    var_location -= num_variables
+                participating_variables.append(var_location)
+            
+            if verbose:
+                print(f"    id: {equation_id}, vars: {participating_variables}, bit: {bit}")
 
-        for hash_offset, bit in enumerate(encoded_values[i]):
-            # add hash_offset to each of the 3 hash locations. get 3 new hash locations
-
-            # create an equation where each of these new hash locations is a 1
-
-            # set the value of this equation to bit
-
-            # add this equation to system
-            pass
-    
-    return system
+            sparse_system.addEquation(equation_id, participating_variables, bit)
+            equation_id += 1
+            
+    return sparse_system
 
 
 
@@ -69,23 +83,37 @@ def construct_csf(keys, values):
     hash_store = BucketedHashStore(vectorizer, keys, values)
     buckets = hash_store.buckets()
     for key_hashes, values in buckets:
-        codedict = make_canonical_huffman(values)
+        codedict = make_canonical_huffman(values, verbose=True)
     
-        sparse_system = construct_modulo2_system(keys, [codedict[value] for value in values])
-
-        # peel_hypergraph(sparse_system)
-
-        # lazy_gaussian_elimination()
-
-        # gaussian_elimination()
-
-        # back_substitution()
+        seed = 0
+        max_num_attempts = 0
+        num_tries = 10
+        while True:
+            try: 
+                sparse_system = construct_modulo2_system(key_hashes, values, codedict, seed, verbose=True)
 
 
 
-    return csf # class with .query() method. 
+                # peel_hypergraph(sparse_system)
 
+                # lazy_gaussian_elimination()
 
+                # gaussian_elimination()
+
+                # back_substitution()
+
+                break
+            except UnsolvableSystemException as e:
+                # system construction increments the seed and hashes 3 times, 
+                # we add 3 here to ensure hashes are unique across runs
+                seed += 3
+                max_num_attempts += 1
+
+                if max_num_attempts == num_tries:
+                    raise ValueError(f"Attempted to solve system {num_tries} "
+                                     f"times without success.")
+
+    # return csf # class with .query() method. 
 
 
 if __name__ == '__main__':
@@ -94,5 +122,5 @@ if __name__ == '__main__':
 
     csf = construct_csf(keys, values)
 
-    for key, value in zip(keys, values):
-        assert csf.query(key) == value
+    # for key, value in zip(keys, values):
+    #     assert csf.query(key) == value
