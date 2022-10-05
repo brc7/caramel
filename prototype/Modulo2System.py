@@ -48,6 +48,11 @@ class SparseModulo2System:
         # Returns (num_equations, num_variables). Read-only.
         return (len(self._equations), self._solution_size)
 
+    @property
+    def equation_ids(self):
+        # Returns a sorted list of equation ids. Read-only.
+        return list(self._equations.keys())
+
 
 class DenseModulo2System:
     def __init__(self,
@@ -107,6 +112,12 @@ class DenseModulo2System:
     def bitvector_size(self):
         # Returns the size of the numpy bitvector 
         return self._bitvector_size
+
+    @property
+    def equation_ids(self):
+        # Returns a sorted list of equation ids. Read-only.
+        return list(self._equations.keys())
+
         
     def xorEquations(self,
                      equation_to_modify: int,
@@ -137,13 +148,13 @@ class DenseModulo2System:
 
     def getFirstVar(self, equation_id: int) -> int:
         # returns the first non-zero bit index in equation_id's equation
-
-        # TODO fails if equation is all zeros. should we return 
-        # np.iinfo(self._backing_type).max? how should we handle max values in 
-        # the gaussian elimination?
         if not self._equations[equation_id].any():
-            raise ValueError(f"Equation {equation_id:d} has all zeros, "
-                             f"can't get first var.")
+            if self._constants[equation_id]:
+                # In this case, we have a linearly dependent row
+                raise UnsolvableSystemException
+            else:
+                # In this case, we have an identity row
+                return self._solution_size
     
         # TODO: np.where searches the whole array, and doesnt stop at the first 
         # sight of nonzero, can we optimize this?

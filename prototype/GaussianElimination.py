@@ -38,11 +38,15 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
             if verbose:
                 print(f"\nStarting Iteration:")
                 print(f"  Top Equation: Id: {top_equation_id}, Equation: "
-                      f"{dense_system.equationToStr(top_equation_id)}")
+                      f"{dense_system.equationToStr(top_equation_id)} | "
+                      f"{dense_system.getEquation(top_equation_id)[1]}")
                 print(f"  Bot Equation: Id: {bot_equation_id}, Equation: "
-                      f"{dense_system.equationToStr(bot_equation_id)}")
+                      f"{dense_system.equationToStr(bot_equation_id)} | "
+                      f"{dense_system.getEquation(top_equation_id)[1]}")
 
             if first_vars[top_equation_id] == first_vars[bot_equation_id]:
+                # Leading 1 in top is above the leading 1 in bot, so
+                # eliminate this variable from bot via xor operations.
                 dense_system.xorEquations(bot_equation_id, top_equation_id)
                 if verbose:
                     print(f"    Top and Bot have equal first vars. Set Bot = Top"
@@ -51,7 +55,8 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
                 if dense_system.isUnsolvable(top_equation_id):
                     raise UnsolvableSystemException(f"Equation {equation_id:d}"
                                 f"has all coefficients = 0 but constant is 1.")
-                #TODO if dense_system.isIdentity(top_equation_id) continue the outer for loop
+                # If bot is an identity, first_vars[bot_equation_id] is 
+                # num_variables (which skips the rest of the inner loop).
                 first_vars[bot_equation_id] = dense_system.getFirstVar(bot_equation_id)
 
             if first_vars[top_equation_id] > first_vars[bot_equation_id]:
