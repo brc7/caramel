@@ -30,6 +30,10 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=False):
     num_equations = sum(len(bitarray) for bitarray in codedict.values())
     num_variables = math.ceil(num_equations * DELTA)
 
+    if verbose:
+        print(f"Constructing SparseModulo2System with {num_variables} variables "
+              f"and {num_equations} equations")
+
     sparse_system = SparseModulo2System(num_variables)
     
     equation_id = 0
@@ -46,7 +50,7 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=False):
             seed += 1
         
         if verbose:
-            print(f"Constructing Equations for value: {values[i]} with code {codedict[values[i]]}")
+            print(f"  Constructing Equations for value: {values[i]} with code {codedict[values[i]]}")
 
         for offset, bit in enumerate(codedict[values[i]]):
             participating_variables = []
@@ -63,7 +67,6 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=False):
             equation_id += 1
             
     return sparse_system
-
 
 
 def construct_csf(keys, values):
@@ -91,8 +94,6 @@ def construct_csf(keys, values):
         while True:
             try: 
                 sparse_system = construct_modulo2_system(key_hashes, values, codedict, seed, verbose=True)
-
-
 
                 # peel_hypergraph(sparse_system)
 
