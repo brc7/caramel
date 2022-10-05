@@ -137,7 +137,22 @@ def test_gaussian_with_swaps():
     assert system.bitArrayToStr(gaussian_elimination(system, [0, 1, 2])) == solution_str
 
 
+def test_empty_system():
+    matrix = [[1, 34],
+              [0, 1, 34],
+              [0, 34]]
+    constants = [0, 1, 1]
+    solution_str = "0" * 35 
+    system = DenseModulo2System(solution_size=len(solution_str))
+    for i, vars in enumerate(matrix):
+        system.addEquation(equation_id=i, 
+                           participating_variables=vars, 
+                           constant=constants[i])
+    assert system.bitArrayToStr(gaussian_elimination(system, [])) == solution_str
+
+
 if __name__ == "__main__":
     test_simple_gaussian_elimination()
     test_gaussian_with_swaps()
+    test_empty_system()
     

@@ -1,6 +1,6 @@
 import random
 import numpy as np
-from collections import defaultdict 
+from collections import defaultdict
 from Modulo2System import SparseModulo2System
 
 '''

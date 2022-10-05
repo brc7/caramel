@@ -76,26 +76,28 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     solved_variable_ids = []
     # List of currently-idle variables. Starts as a bit vector of all 1's, and
     # is filled in with 0s as variables become non-idle.
-    
     # Ugly and breaks encapsulation, but there truly seems to be no other way.
     num_variables_per_chunk = dense_system.dtype.itemsize * 8
     idle_variable_indicator = -1 * np.ones(
         int(math.ceil(num_variables / num_variables_per_chunk)),
         dtype=dense_system.dtype)
 
+    # Only for debugging.
+    if verbose >= 3:
+        active_variable_ids = []
     # Sorted list of variable ids, in descending weight order.
     sorted_variable_ids = countsort_variable_ids(variable_weight,
                                                  num_variables,
                                                  num_equations)
 
     num_active_variables = 0
-    num_remaining_equations = num_equations
+    num_remaining_equations = len(equation_ids)
 
     while(num_remaining_equations > 0):
         if verbose >= 3:
             print(f"Solved variable IDs ({len(solved_variable_ids)} variables): ", " ".join([f"{v}" for v in sorted(solved_variable_ids)]))
             print(f"Idle variable IDs ({len(sorted_variable_ids)} variables):", " ".join([f"{v}({variable_weight[v]})" for v in sorted(sorted_variable_ids)]))
-            # print(f"Active variable IDs ({len(active_variable_ids)} variables):", " ".join([f"{v}" for v in sorted(active_variable_ids)]))
+            print(f"Active variable IDs ({len(active_variable_ids)} variables):", " ".join([f"{v}" for v in sorted(active_variable_ids)]))
             print(f"Solved equations ({len(solved_equation_ids)} equations): ", solved_equation_ids)
             print(f"Active equations ({len(dense_equation_ids)} equations): ", dense_equation_ids)
             print("System: ")
@@ -116,7 +118,8 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
             dense_system._update_bitvector(idle_variable_indicator,
                                            variable_id,
                                            value=0)
-            # active_variable_ids.append(variable_id)
+            if verbose >= 3:
+                active_variable_ids.append(variable_id)
             num_active_variables += 1
             # By marking this variable as active, we must update priorities.
             for equation_id in var_to_equations[variable_id]:
@@ -298,6 +301,26 @@ def test_solvable_system(verbose=0):
     return True
 
 
+def test_system_subset(verbose=0):
+    # Tests a system that is known to be solvable.
+    num_variables = 10
+    sparse_system = SparseModulo2System(num_variables)
+    sparse_system.addEquation(0, [1,2,3], 1)
+    sparse_system.addEquation(1, [3,4,5], 1)
+    sparse_system.addEquation(2, [4,5,6], 0)
+    sparse_system.addEquation(3, [6,7,8], 1)
+    sparse_system.addEquation(4, [5,8,9], 0)
+    sparse_system.addEquation(5, [0,8,9], 1)
+    equation_ids = [0,2,3,5]
+    try: 
+        state = lazy_gaussian_elimination(sparse_system,
+                                          equation_ids,
+                                          verbose=verbose)
+    except UnsolvableSystemException as e:
+        return False
+    return True
+
+
 def test_active_system(verbose=0):
     # Tests a system that is known to be solvable, but has an active core.
     num_variables = 10
@@ -367,6 +390,7 @@ def test_solvable_with_duplicates_system(verbose=0):
 
 
 if __name__ == '__main__':
+    test_system_subset(verbose=2)
     test_unsolvable_pair(verbose=2)
     test_solvable_system(verbose=2)
     test_active_system(verbose=2)
