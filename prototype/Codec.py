@@ -83,7 +83,7 @@ def min_redundancy_codeword_lengths(frequencies):
     return A
 
 
-def make_canonical_huffman(values, verbose = True):
+def make_canonical_huffman(values, verbose = False):
     frequency_map = calculate_frequencies(values)
     # we sort in non-decreasing order, first by frequency then by symbol. 
     # this is required for the decoder to reconstruct the codes
@@ -129,4 +129,4 @@ def test_canonical_huffman(values):
 if __name__ == "__main__":
     for i in range(100):
         values = np.random.randint(0, 20, size=30)    
-        test_canonical_huffman([])
+        test_canonical_huffman(values)
