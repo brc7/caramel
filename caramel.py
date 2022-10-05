@@ -5,27 +5,34 @@ from prototype.LazyGaussianElimination import lazy_gaussian_elimination
 from prototype.GaussianElimination import gaussian_elimination
 from prototype.Modulo2System import DenseModulo2System, SparseModulo2System
 
-def construct_modulo2_system(keys, encoded_values):
+def construct_modulo2_system(key_hashes, encoded_values):
     """
     Constructs a binary system of linear equations to solve for each bit of the 
     encoded values for each key.
 
 	Arguments:
-		keys: An iterable collection of N unique hashable items.
-		encoded_values: An iterable collection of N encoded values. 
+		keys: An iterable collection of N unique hashes.
+		encoded_values: An iterable collection of N bitarrays, representing the 
+            encoded values. 
 
 	Returns:
 		A tuple of equation, value, ...???
     """
 
-    # the resulting system has a number of equations equal to:
-    #  - sum(len(encoded_value) for encoded_value in encoded_values)
-    # and a length of each equation equal to:
-    #  - the number of equations * SOME_CONSTANT_I_FORGOT
+    # This is a constant multiplier on the number of variables based on the 
+    # number of equations expected. This constant makes the system solvable with
+    # very high probability. If we want faster construction at the cost of 12%
+    # more memory, we can omit lazy gaussian elimination and set delta to 1.23
+    DELTA = 1.10 
 
-    system = SparseModulo2System()
+    num_equations = sum(bitarray.count(1) + bitarray.count(0) for bitarray in encoded_values)
+    num_variables = num_equations * DELTA
+
+    system = SparseModulo2System(num_variables)
     
-    for i, key in enumerate(keys):
+    for i, key_hash in enumerate(key_hashes):
+
+        
 
         # hash key with 3 different hash functions, modded to the length of each equation
         # create an equation with all 0s except in the 3 locations specified by the hash, 
@@ -64,7 +71,7 @@ def construct_csf(keys, values):
     for key_hashes, values in buckets:
         codedict = make_canonical_huffman(values)
     
-        sparse_system = construct_modulo2_system(keys, [codedict[key] for key in keys])
+        sparse_system = construct_modulo2_system(keys, [codedict[value] for value in values])
 
         # peel_hypergraph(sparse_system)
 
