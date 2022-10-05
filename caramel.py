@@ -1,9 +1,14 @@
-
+from prototype.BucketedHashStore import BucketedHashStore
+from prototype.Codec import make_canonical_huffman
+from prototype.HypergraphPeeler import peel_hypergraph
+from prototype.LazyGaussianElimination import lazy_gaussian_elimination
+from prototype.GaussianElimination import gaussian_elimination
+from prototype.Modulo2System import DenseModulo2System, SparseModulo2System
 
 def construct_modulo2_system(keys, encoded_values):
     """
     Constructs a binary system of linear equations to solve for each bit of the 
-    encoded values for each key. 
+    encoded values for each key.
 
 	Arguments:
 		keys: An iterable collection of N unique hashable items.
@@ -18,9 +23,10 @@ def construct_modulo2_system(keys, encoded_values):
     # and a length of each equation equal to:
     #  - the number of equations * SOME_CONSTANT_I_FORGOT
 
-    system = Modulo2System() # TODO: how should we design this datastructure???
+    system = SparseModulo2System()
     
     for i, key in enumerate(keys):
+
         # hash key with 3 different hash functions, modded to the length of each equation
         # create an equation with all 0s except in the 3 locations specified by the hash, 
         # where there will be 1s
@@ -41,8 +47,8 @@ def construct_modulo2_system(keys, encoded_values):
 
 def construct_csf(keys, values):
     """
-    Constructs a compressed static function. This implementation sacrifices a lot of the 
-	configurability for the sake of simplicity.
+    Constructs a compressed static function. This implementation sacrifices a 
+    lot of the configurability for the sake of simplicity.
 
 	Arguments:
 		keys: An iterable collection of N unique hashable items.
@@ -52,26 +58,21 @@ def construct_csf(keys, values):
 		A csf structure supporting the .query(key) method.
     """
 
-    encoded_values = encode_values(values)
+    vectorizer = lambda s : bytes(s, 'utf-8')
+    hash_store = BucketedHashStore(vectorizer, keys, values)
+    buckets = hash_store.buckets()
+    for key_hashes, values in buckets:
+        codedict = make_canonical_huffman(values)
+    
+        sparse_system = construct_modulo2_system(keys, [codedict[key] for key in keys])
 
-    # Eventually we would divide keys into buckets to partition the input into a
-    # subset of smaller csfs (partition depending on the hash value of the keys). 
-    # This reduces the problem from one big linear system to N small linear 
-    # systems. Since the complexity is O(N^3) this should significantly speed up
-    # the algorithm. For now though lets just start with one linear system.
+        # peel_hypergraph(sparse_system)
 
+        # lazy_gaussian_elimination()
 
-    system = construct_modulo2_system(keys, encoded_values)
+        # gaussian_elimination()
 
-    # TODO: how do we pass data between each of these steps?
-
-    hypergraph_peeling() # how??? 
-
-    lazy_gaussian_elimination()
-
-    regular_gaussian_elimination()
-
-    back_substitution() # how?? what datastructures to keep track of everything?
+        # back_substitution()
 
 
 
