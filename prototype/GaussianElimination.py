@@ -89,8 +89,8 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
 
 
 def scalarProduct(bitarray1, bitarray2):
-    # return the number of common 1's between two bitarrays
-    return bitarray.util.count_and(bitarray1, bitarray2)
+    # return the number of common 1's between two bitarrays modded by 2
+    return bitarray.util.count_and(bitarray1, bitarray2) % 2
 
 
 def test_simple_gaussian_elimination():

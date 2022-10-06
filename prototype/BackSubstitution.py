@@ -26,11 +26,8 @@ def solve_lazy_from_dense(dense_equation_ids,
         value = np.bitwise_and(1, value)
         print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
               f": Value = {value}, constant = {constant}")
-        # TODO: This breaks encapsulation and is ugly - should be fixed by 
-        # making the method public (or a helper function).
-        dense_solution = dense_system._update_bitvector(dense_solution, 
-                                                        variable_id,
-                                                        value=value)
+        dense_solution[variable_id] = value
+
     return dense_solution
 
 
@@ -56,11 +53,8 @@ def solve_peeled_from_dense(peeled_equation_ids,
         value = np.bitwise_and(1, value)
         print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
               f": Value = {value}, constant = {constant}")
-        # TODO: This breaks encapsulation and is ugly - should be fixed by 
-        # making the method public (or a helper function).
-        dense_solution = dense_system._update_bitvector(dense_solution,
-                                                        variable_id,
-                                                        value=value)
+        dense_solution[variable_id] = value
+
     return dense_solution
 
 
@@ -103,7 +97,7 @@ def test_lazy_from_dense_solvable_system(verbose=0):
         print("System (after gaussian elimination): ")
         print(dense_system.systemToStr())
         print("Solution (after gaussian elimination): ")
-        print(dense_system.bitArrayToStr(dense_solution))
+        print(dense_solution.to01())
     except UnsolvableSystemException as e:
         return False
     dense_solution = solve_lazy_from_dense(dense_ids,
@@ -112,7 +106,7 @@ def test_lazy_from_dense_solvable_system(verbose=0):
                                            dense_system,
                                            dense_solution)
     print("Solution (after lazy gaussian elimination): ")
-    print(dense_system.bitArrayToStr(dense_solution))
+    print(dense_solution.to01())
 
     # Check the solution
     original_system = sparse_to_dense(sparse_system)
@@ -155,7 +149,7 @@ def test_peeled_from_dense_solvable_system(verbose=0):
         print("System (after gaussian elimination): ")
         print(dense_system.systemToStr())
         print("Solution (after gaussian elimination): ")
-        print(dense_system.bitArrayToStr(dense_solution))
+        print(dense_solution.to01())
     except UnsolvableSystemException as e:
         print("SAD")
         return False
@@ -164,7 +158,7 @@ def test_peeled_from_dense_solvable_system(verbose=0):
         peeled_ids, var_order, dense_system, dense_solution)
 
     print("Solution (after peeling back-substitution): ")
-    print(dense_system.bitArrayToStr(dense_solution))
+    print(dense_solution.to01())
 
     # Check the solution
     original_system = sparse_to_dense(sparse_system)
