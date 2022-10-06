@@ -5,6 +5,7 @@ from HypergraphPeeler import peel_hypergraph
 from LazyGaussianElimination import lazy_gaussian_elimination
 from GaussianElimination import gaussian_elimination
 from BackSubstitution import solve_lazy_from_dense, solve_peeled_from_dense, sparse_to_dense
+from CSF import CSF
 import math
 import spookyhash
 import random
@@ -132,13 +133,18 @@ def construct_csf(keys, values, verbose=0):
 		A csf structure supporting the .query(key) method.
     """
 
-    vectorizer = lambda s : bytes(s, 'utf-8')
     # The code dict needs to be the same for all the partition-CSFs.
-    codedict = make_canonical_huffman(values, verbose=verbose)
+    codedict, bit_length_frequencies, symbols = make_canonical_huffman(values, verbose=verbose)
+
+    vectorizer = lambda s : bytes(s, 'utf-8')
     hash_store = BucketedHashStore(vectorizer, keys, values)
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
 
+
+    construction_seeds = []
+    solutions = []
+    solution_sizes = []
     for key_hashes, values in hash_store.buckets():
         if verbose >= 1:
             print(f"Solving system for {len(key_hashes)} key-value pairs.")
@@ -153,6 +159,9 @@ def construct_csf(keys, values, verbose=0):
                                                          seed,
                                                          verbose=verbose)
                 solution = solve_modulo2_system(sparse_system, verbose=verbose)
+                solutions.append(solution)
+                solution_sizes.append(sparse_system.shape[1])
+                construction_seeds.append(seed)
                 break
             except UnsolvableSystemException as e:
                 # system construction increments the seed and hashes 3 times, 
@@ -163,7 +172,8 @@ def construct_csf(keys, values, verbose=0):
                 if max_num_attempts == num_tries:
                     raise ValueError(f"Attempted to solve system {num_tries} "
                                      f"times without success.")
-    return solution
+
+    return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, bit_length_frequencies)
 
 
 if __name__ == '__main__':

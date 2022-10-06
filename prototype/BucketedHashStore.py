@@ -82,6 +82,10 @@ class BucketedHashStore:
         """
         return zip(self._key_buckets, self._value_buckets)
 
+    @property
+    def seed(self):
+        return self._seed
+
 
 if __name__ == "__main__":
     num_keys = 1000

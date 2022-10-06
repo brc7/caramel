@@ -95,6 +95,9 @@ def make_canonical_huffman(symbols, verbose = False):
     symbol_frequency_pairs.reverse()
     codeword_lengths.reverse()    
 
+    # for decoding. the ith element is the number of codewords of bit length i
+    bit_length_frequencies = [0] * (codeword_lengths[-1] + 1)
+
     # TODO add length limiting?
     codedict = {}
     code = 0
@@ -102,6 +105,7 @@ def make_canonical_huffman(symbols, verbose = False):
     for i, (symbol, frequency) in enumerate(symbol_frequency_pairs):
         current_length = codeword_lengths[i]
         codedict[symbol] = int2ba(code, length=current_length, endian='big')
+        bit_length_frequencies[current_length] += 1
         if i + 1 < len(codeword_lengths):
             code += 1
             code <<= codeword_lengths[i + 1] - current_length
@@ -109,21 +113,32 @@ def make_canonical_huffman(symbols, verbose = False):
     if verbose:
         print(f"Canonical huffman produced codedict: {codedict}")
 
-    return codedict #TODO we'll need to return other things for the decoder
+    print(codeword_lengths)
+    
+    return codedict, bit_length_frequencies, [pair[0] for pair in symbol_frequency_pairs]
 
 
 def test_canonical_huffman(values):
     # our implementation
-    actual_codedict = make_canonical_huffman(values)
+    actual_codedict, actual_counts, actual_symbols = make_canonical_huffman(values, True)
 
     # bitarray's implementation
     frequency_map = calculate_frequencies(values)
-    expected_codedict, counts, symbols = canonical_huffman(frequency_map)
+    expected_codedict, expected_counts, expected_symbols = canonical_huffman(frequency_map)
+
+    print("ACTUAL")
+    print(actual_codedict)
+    print("EXPECTED")
+    print(expected_codedict)
+    print(actual_counts, expected_counts)
+    # assert actual_counts == expected_counts
 
     # can't do == on the maps because two identical bitarrays aren't equal
     for actual_key, expected_key in zip(sorted(actual_codedict.keys()), sorted(expected_codedict.keys())):
         assert actual_key == expected_key
-        assert actual_codedict[actual_key].to01(), expected_codedict[expected_key].to01()
+        print(actual_codedict[actual_key].to01(), expected_codedict[expected_key].to01())
+        assert actual_codedict[actual_key].to01() == expected_codedict[expected_key].to01()
+    assert actual_codedict == expected_codedict
 
 
 if __name__ == "__main__":
