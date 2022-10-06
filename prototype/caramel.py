@@ -176,7 +176,17 @@ if __name__ == '__main__':
     values = [math.floor(math.log(random.randint(1, 100)))
               for _ in range(len(keys))]
 
+    import sys, os
+    sys.stdout = open(os.devnull, 'w')
+
+    import time
+    start = time.perf_counter()
     csf = construct_csf(keys, values, verbose=1)
+    end = time.perf_counter()
+
+    sys.stdout = sys.__stdout__
+
+    print(end - start)
 
     # for key, value in zip(keys, values):
     #     assert csf.query(key) == value

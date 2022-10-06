@@ -1,13 +1,6 @@
-import spookyhash
 import numpy as np
-
 from typing import List
-import gmpy2
-
-# For usage example
-import random
-import string
-import math
+from bitarray import bitarray
 
 class SparseModulo2System:
     def __init__(self,
@@ -64,14 +57,6 @@ class DenseModulo2System:
         self._equations = {}
         self._constants = {}
         self._solution_size = solution_size
-        # Note: Backing type must be little-endian.
-        self._backing_type = np.dtype('<u4')
-
-        # Determine the size of the backing array from the solution size
-        # Each variable is 1 bit, so 8 * num_bytes variables / item in array
-        self._num_variables_per_chunk = self._backing_type.itemsize * 8
-        self._bitvector_size = int(math.ceil(
-            self._solution_size / self._num_variables_per_chunk))
     
     def addEquation(self,
                     equation_id: int,
@@ -86,12 +71,14 @@ class DenseModulo2System:
             if var >= self._solution_size:
                 raise ValueError(f"Invalid variable id: id {var:d} >= "
                                  f"{self._solution_size:d}.")
-        backing_array = np.zeros(shape=self._bitvector_size,
-                                 dtype=self._backing_type)
+
+        equation = bitarray(self._solution_size)
+        equation.setall(0)
         # Set the correct bits in the backing array.
         for var in participating_variables:
-            backing_array = self._update_bitvector(backing_array, var)
-        self._equations[equation_id] = backing_array
+            equation[var] = 1
+
+        self._equations[equation_id] = equation
         self._constants[equation_id] = constant
 
     def getEquation(self,
@@ -104,21 +91,10 @@ class DenseModulo2System:
         return (len(self._equations), self._solution_size)
 
     @property
-    def dtype(self):
-        # Returns the dtype of the backing array. Read-only.
-        return self._backing_type
-
-    @property
-    def bitvector_size(self):
-        # Returns the size of the numpy bitvector 
-        return self._bitvector_size
-
-    @property
     def equation_ids(self):
         # Returns a sorted list of equation ids. Read-only.
         return list(self._equations.keys())
 
-        
     def xorEquations(self,
                      equation_to_modify: int,
                      equation_to_xor: int):
@@ -129,10 +105,7 @@ class DenseModulo2System:
         c_to_xor = self._constants[equation_to_xor]
         new_c = np.bitwise_xor(c_to_modify, c_to_xor)
 
-        new_equation = np.bitwise_xor(self._equations[equation_to_modify],
-                                      self._equations[equation_to_xor])
-
-        self._equations[equation_to_modify] = new_equation
+        self._equations[equation_to_modify] ^= self._equations[equation_to_xor]
         self._constants[equation_to_modify] = new_c
 
     def swapEquations(self,
@@ -156,17 +129,7 @@ class DenseModulo2System:
                 # In this case, we have an identity row
                 return self._solution_size
     
-        # TODO: np.where searches the whole array, and doesnt stop at the first 
-        # sight of nonzero, can we optimize this?
-        equation = self._equations[equation_id]
-        first_nonzero_chunk_id = np.where(equation != 0)[0][0]
-        chunk = equation[first_nonzero_chunk_id]
-
-        # Using gmpy to find the index of the least significant bit. Sources:
-        # https://stackoverflow.com/questions/5520655/return-index-of-least-significant-bit-in-python
-        # https://stackoverflow.com/questions/12078277/is-this-a-bug-in-gmpy2-or-am-i-mad
-        index_of_first_set_bit_in_chunk = gmpy2.bit_scan1(gmpy2.mpz(chunk))
-        return first_nonzero_chunk_id * self._num_variables_per_chunk + index_of_first_set_bit_in_chunk
+        return self._equations[equation_id].find(1)
 
     def isUnsolvable(self, equation_id: int) -> bool:
         # returns if the equation is all zeros and the constant is not 0
@@ -179,19 +142,7 @@ class DenseModulo2System:
         return isEmpty and self._constants[equation_id] == 0
 
     def equationToStr(self, equation_id: int) -> str:
-        return self.bitArrayToStr(self._equations[equation_id])
-    
-    def bitArrayToStr(self, bitarray):
-        array_str = ""
-        for chunk in bitarray:
-            # [2:] to remove the "0b" at the beginning of the bit string
-            # [::-1] to reverse it since we work with little-endian ordering
-            chunk_str = bin(chunk)[2:][::-1]
-            # we either pad to round out the current chunk or the whole solution
-            num_padding_zeroes = min(self._solution_size - len(array_str), self._num_variables_per_chunk) - len(chunk_str)
-            chunk_str += "0" * num_padding_zeroes
-            array_str += chunk_str
-        return array_str
+        return f"{self._equations[equation_id].to01()} | {self._constants[equation_id]:d} (Equation [{equation_id:d}]"
 
     def systemToStr(self, equation_ids=None):
         if equation_ids is None:
@@ -199,27 +150,8 @@ class DenseModulo2System:
             equation_ids.sort()
         system_str = ""
         for equation_id in equation_ids:
-            system_str += self.equationToStr(equation_id)
-            system_str += f" | {self._constants[equation_id]:d} "
-            system_str += f"(Equation [{equation_id:d}])\n"
+            system_str += self.equationToStr(equation_id) + "\n"
         return system_str
-
-    def _update_bitvector(self, array, bit_id, value=1):
-        chunk_id = bit_id // self._num_variables_per_chunk
-        if chunk_id >= len(array):
-            raise ValueError(f"Tried to set chunk id {chunk_id:d} in backing "
-                             f"array of size {len(array):d}.")
-        # TODO: Replace and test with more efficient, and equivalent
-        # num_left_shifts = bit_id - chunk_id * self._num_variables_per_chunk
-        num_left_shifts = bit_id % self._num_variables_per_chunk
-        chunk = np.array([1], dtype=self._backing_type)
-        chunk = np.left_shift(chunk, num_left_shifts)
-        if value:
-            array[chunk_id] = np.bitwise_or(array[chunk_id], chunk)
-        else:
-            chunk = np.bitwise_not(chunk)
-            array[chunk_id] = np.bitwise_and(array[chunk_id], chunk)
-        return array
 
 
 class UnsolvableSystemException(Exception):
