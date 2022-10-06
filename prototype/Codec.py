@@ -1,6 +1,6 @@
 import numpy as np
 from collections import defaultdict
-from bitarray.util import canonical_huffman, canonical_decode, int2ba
+import bitarray.util
 
 def calculate_frequencies(symbols):
     # returns a map from symbol to frequency
@@ -10,12 +10,10 @@ def calculate_frequencies(symbols):
     return frequency_map
 
 
-def min_redundancy_codeword_lengths(frequencies):
+def min_redundancy_codeword_lengths(A):
     """
-    frequencies: list of symbol frequencies sorted in non-decreasing order, 
-        first by frequency, then by symbol. Its important to sort by symbol as
-        a tiebreaker so the decoder can reconstruct the codes
-    returns: the expected lengths of codewords in huffman encoding
+    A: List of symbol frequencies in non-decreasing order.
+    returns: The expected lengths of codewords in huffman encoding
 
     Algorithm described in: http://hjemmesider.diku.dk/~jyrki/Paper/WADS95.pdf
     reference sources: 
@@ -23,8 +21,6 @@ def min_redundancy_codeword_lengths(frequencies):
      - https://people.eng.unimelb.edu.au/ammoffat/inplace.c
     """
 
-    # uses name A just to follow the algorithm
-    A = list(frequencies) # TODO do we need to copy here??
     size = len(A)
 
     # check trivial cases
@@ -35,7 +31,7 @@ def min_redundancy_codeword_lengths(frequencies):
         return A
      
     # first pass, left to right, setting parent pointers
-    A[0] += A[1] # TODO sebastiano does A[0] = 1???
+    A[0] += A[1]
     root = 0
     leaf = 2
     for next in range(1, size - 1):
@@ -83,7 +79,16 @@ def min_redundancy_codeword_lengths(frequencies):
     return A
 
 
-def make_canonical_huffman(symbols, verbose = False):
+def canonical_huffman(symbols, verbose = False):
+    """
+    Given a list of symbols, create a canonical huffman codebook using in-place
+    calculation of minimum-redundancy codes. Returns a tuple containing:
+
+    0. the canonical Huffman code as a dict mapping symbols to bitarrays
+    1. a list containing the number of symbols of each code length
+    2. a list of symbols in canonical order
+    """
+
     frequency_map = calculate_frequencies(symbols)
     # we sort in non-decreasing order, first by frequency then by symbol. 
     # this is required for the decoder to reconstruct the codes
@@ -93,19 +98,22 @@ def make_canonical_huffman(symbols, verbose = False):
     # reverse because we should do code assignment in non-decreasing order of 
     # bit length instead of frequency
     symbol_frequency_pairs.reverse()
-    codeword_lengths.reverse()    
+    codeword_lengths.reverse()   
 
-    # for decoding. the ith element is the number of codewords of bit length i
-    bit_length_frequencies = [0] * (codeword_lengths[-1] + 1)
+    print("OUR CODEWORD LENGTHS:   ", codeword_lengths)
 
-    # TODO add length limiting?
-    codedict = {}
+    # TODO add length limiting to this algorithm
+
     code = 0
-    current_length = codeword_lengths[0]
-    for i, (symbol, frequency) in enumerate(symbol_frequency_pairs):
+    # maps the symbol to a bitarray representing its code
+    codedict = {} 
+    # accessing element i gives the number of codes of length i in the codedict
+    # initialize it with size = max code length + 1
+    code_length_counts = [0] * (codeword_lengths[-1] + 1)
+    for i, (symbol, _) in enumerate(symbol_frequency_pairs):
         current_length = codeword_lengths[i]
-        codedict[symbol] = int2ba(code, length=current_length, endian='big')
-        bit_length_frequencies[current_length] += 1
+        codedict[symbol] = bitarray.util.int2ba(code, length=current_length, endian='big')
+        code_length_counts[current_length] += 1
         if i + 1 < len(codeword_lengths):
             code += 1
             code <<= codeword_lengths[i + 1] - current_length
@@ -113,35 +121,29 @@ def make_canonical_huffman(symbols, verbose = False):
     if verbose:
         print(f"Canonical huffman produced codedict: {codedict}")
 
-    print(codeword_lengths)
-    
-    return codedict, bit_length_frequencies, [pair[0] for pair in symbol_frequency_pairs]
+    print("OUR COUNTS: ", code_length_counts)
+
+    return codedict, code_length_counts, [pair[0] for pair in symbol_frequency_pairs]
 
 
-def test_canonical_huffman(values):
+def test_canonical_huffman(symbols):
     # our implementation
-    actual_codedict, actual_counts, actual_symbols = make_canonical_huffman(values, True)
+    actual_codedict, code_length_counts, sorted_symbols = canonical_huffman(symbols)
 
     # bitarray's implementation
-    frequency_map = calculate_frequencies(values)
-    expected_codedict, expected_counts, expected_symbols = canonical_huffman(frequency_map)
-
-    print("ACTUAL")
-    print(actual_codedict)
-    print("EXPECTED")
-    print(expected_codedict)
-    print(actual_counts, expected_counts)
-    # assert actual_counts == expected_counts
+    frequency_map = calculate_frequencies(symbols)
+    expected_codedict, counts, symbols = bitarray.util.canonical_huffman(frequency_map)
+    
+    print("THEIR COUNTS: ", counts)
 
     # can't do == on the maps because two identical bitarrays aren't equal
     for actual_key, expected_key in zip(sorted(actual_codedict.keys()), sorted(expected_codedict.keys())):
         assert actual_key == expected_key
-        print(actual_codedict[actual_key].to01(), expected_codedict[expected_key].to01())
         assert actual_codedict[actual_key].to01() == expected_codedict[expected_key].to01()
-    assert actual_codedict == expected_codedict
 
 
 if __name__ == "__main__":
-    for i in range(100):
-        symbols = np.random.randint(0, 20, size=30)    
+    for i in range(10):
+        symbols = np.random.randint(0, 20, size=30)  
+        print(symbols)  
         test_canonical_huffman(symbols)

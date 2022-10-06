@@ -1,5 +1,5 @@
 from BucketedHashStore import BucketedHashStore
-from Codec import make_canonical_huffman
+from Codec import canonical_huffman
 from Modulo2System import DenseModulo2System, SparseModulo2System, UnsolvableSystemException
 from HypergraphPeeler import peel_hypergraph
 from LazyGaussianElimination import lazy_gaussian_elimination
@@ -134,7 +134,7 @@ def construct_csf(keys, values, verbose=0):
     """
 
     # The code dict needs to be the same for all the partition-CSFs.
-    codedict, bit_length_frequencies, symbols = make_canonical_huffman(values, verbose=verbose)
+    codedict, code_length_counts, symbols = canonical_huffman(values, verbose=verbose)
 
     vectorizer = lambda s : bytes(s, 'utf-8')
     hash_store = BucketedHashStore(vectorizer, keys, values)
