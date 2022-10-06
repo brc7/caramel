@@ -134,7 +134,7 @@ def construct_csf(keys, values, verbose=0):
 
     vectorizer = lambda s : bytes(s, 'utf-8')
     # The code dict needs to be the same for all the partition-CSFs.
-    codedict = canonical_huffman(values, verbose=verbose)
+    codedict, code_length_counts, sorted_symbols = canonical_huffman(values, verbose=verbose)
     hash_store = BucketedHashStore(vectorizer, keys, values)
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
