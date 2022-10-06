@@ -71,8 +71,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
 
     if verbose:
         print("\nCompleted Echelon Form. Now doing back-substitution.")
-    
-    
+
     solution_size = dense_system.shape[1]
     solution = bitarray.bitarray(solution_size)
     solution.setall(0)
