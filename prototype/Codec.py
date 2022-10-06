@@ -80,6 +80,15 @@ def min_redundancy_codeword_lengths(A):
 
 
 def canonical_huffman(symbols, verbose = False):
+    """
+    Given a list of symbols, create a canonical huffman codebook using in-place
+    calculation of minimum-redundancy codes. Returns a tuple containing:
+
+    0. the canonical Huffman code as a dict mapping symbols to bitarrays
+    1. a list containing the number of symbols of each code length
+    2. a list of symbols in canonical order
+    """
+
     frequency_map = calculate_frequencies(symbols)
     # we sort in non-decreasing order, first by frequency then by symbol. 
     # this is required for the decoder to reconstruct the codes
@@ -96,7 +105,7 @@ def canonical_huffman(symbols, verbose = False):
     # TODO add length limiting to this algorithm
 
     code = 0
-    # maps the symbol to its code
+    # maps the symbol to a bitarray representing its code
     codedict = {} 
     # accessing element i gives the number of codes of length i in the codedict
     # initialize it with size = max code length + 1
