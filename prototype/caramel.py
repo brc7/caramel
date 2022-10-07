@@ -56,6 +56,8 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
             )
             seed += 1
         
+        print("START LOCATIONS = ", start_var_locations)
+        
         if verbose >= 2:
             print(f"  Constructing Equations for value: {values[i]} with code {codedict[values[i]]}")
 
@@ -173,20 +175,23 @@ def construct_csf(keys, values, verbose=0):
                     raise ValueError(f"Attempted to solve system {num_tries} "
                                      f"times without success.")
 
-    return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, bit_length_frequencies)
+    return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, code_length_counts)
 
 
 if __name__ == '__main__':
     keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
     values = [111, 222, 333, 444, 555]
+    csf = construct_csf(keys, values, verbose=0)
+
+    print(csf.query("key_5"))
 
     # keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
-    keys = [str(i) for i in range(1000000)]
-    random.seed(41)
-    values = [math.floor(math.log(random.randint(1, 100)))
-              for _ in range(len(keys))]
+    # keys = [str(i) for i in range(1000000)]
+    # random.seed(41)
+    # values = [math.floor(math.log(random.randint(1, 100)))
+    #           for _ in range(len(keys))]
 
-    csf = construct_csf(keys, values, verbose=1)
+    # csf = construct_csf(keys, values, verbose=1)
 
     # for key, value in zip(keys, values):
     #     assert csf.query(key) == value
