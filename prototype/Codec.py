@@ -122,8 +122,45 @@ def canonical_huffman(symbols, verbose = False):
     return codedict, code_length_counts, [pair[0] for pair in symbol_frequency_pairs]
 
 
+def canonical_decode(bitarray, code_length_counts, symbols):
+    """
+    Find the first decodable segment in a given bitarray and return the 
+    associated symbol.
+
+    Inputs:
+        bitarray: A bitarray to decode
+        code_length_counts: A list where the value at index i represents the
+            number of symbols of code length i
+        symbols: A list of symbols in canonical order
+
+    Note: code_length_counts and symbols are returned from canonical_huffman
+
+    Source: https://github.com/madler/zlib/blob/master/contrib/puff/puff.c#L235
+    """
+
+    code = 0
+    first = 0
+    index = 0
+    for i in range(1, len(code_length_counts)):
+        next_bit = bitarray[i - 1]
+        code = np.bitwise_or(code, next_bit)
+        count = code_length_counts[i]
+        if code - count < first:
+            return symbols[index + (code - first)]
+        index += count
+        first += count
+        first <<= 1
+        code <<= 1
+    
+    raise ValueError("Invalid Code Passed")
+
+
 def test_canonical_huffman(symbols):
-    pass
+    codedict, code_length_counts, sorted_symbols = canonical_huffman(symbols)
+
+    for expected_key, code in codedict.items():
+        actual_key = canonical_decode(code, code_length_counts, sorted_symbols)
+        assert actual_key == expected_key
 
 
 if __name__ == "__main__":
