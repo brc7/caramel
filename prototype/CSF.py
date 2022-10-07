@@ -1,5 +1,6 @@
 import spookyhash
 from Codec import canonical_decode
+from BucketedHashStore import get_bucket_id
 
 class CSF:
     def __init__(self,
@@ -23,17 +24,8 @@ class CSF:
         self._code_length_counts = code_length_counts
 
     def query(self, key):
-        #TODO this function repeats a lot of code. let's refactor this 
-        # eventually to not duplicate code. Also let's optimize this function
-
-        # this is copied from bucketed hash store, lets reuse
         signature = spookyhash.hash128(self._bucketed_hash_store_vectorizer(key), self._bucketed_hash_store_seed)
-        # Use first 64 bits of the signature to identify the segment
-        bucket_hash = signature >> 64
-        num_buckets = len(self._solutions)
-        # This outputs a uniform integer from [0, num_buckets]
-        bucket_id = (bucket_hash >> 1) * (num_buckets << 1)
-        bucket_id = bucket_id >> 64
+        bucket_id = get_bucket_id(signature, num_buckets=len(self._solutions))
 
         solution = self._solutions[bucket_id]
         solution_size = self._solution_sizes[bucket_id]

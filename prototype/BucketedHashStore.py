@@ -61,11 +61,7 @@ class BucketedHashStore:
 
     def _add(self, key, value):
         signature = spookyhash.hash128(self._vectorizer(key), self._seed)
-        # Use first 64 bits of the signature to identify the segment
-        bucket_hash = signature >> 64
-        # This outputs a uniform integer from [0, self._num_buckets]
-        bucket_id = (bucket_hash >> 1) * (self._num_buckets << 1)
-        bucket_id = bucket_id >> 64
+        bucket_id = get_bucket_id(signature, self._num_buckets)
         if signature in self._key_buckets[bucket_id]:
             raise ValueError("Detected a key collision under 128-bit hash. "
                              "Likely due to a duplicate key.")
@@ -85,6 +81,15 @@ class BucketedHashStore:
     @property
     def seed(self):
         return self._seed
+
+
+def get_bucket_id(signature, num_buckets):
+    # Use first 64 bits of the signature to identify the segment
+    bucket_hash = signature >> 64
+    # This outputs a uniform integer from [0, self._num_buckets]
+    bucket_id = (bucket_hash >> 1) * (num_buckets << 1)
+    bucket_id = bucket_id >> 64
+    return bucket_id
 
 
 if __name__ == "__main__":

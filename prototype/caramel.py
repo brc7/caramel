@@ -8,7 +8,7 @@ from BackSubstitution import solve_lazy_from_dense, solve_peeled_from_dense, spa
 from CSF import CSF
 import math
 import spookyhash
-
+import random
 
 def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
     """
@@ -180,18 +180,21 @@ if __name__ == '__main__':
     values = [111, 222, 333, 444, 555]
     csf = construct_csf(keys, values, verbose=0)
 
-    index = 0
-    query_key, query_value = keys[index], values[index]
-    print(f"decoding key {query_key}: should map to {query_value}")
-    print("Querying csf with key gives: ", csf.query(query_key))
+    keys = [str(i) for i in range(10)]
+    random.seed(41)
+    values = [math.floor(math.log(random.randint(1, 100)))
+              for _ in range(len(keys))]
 
-    # keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
-    # keys = [str(i) for i in range(1000000)]
-    # random.seed(41)
-    # values = [math.floor(math.log(random.randint(1, 100)))
-    #           for _ in range(len(keys))]
+    print(keys)
+    print(values)
 
-    # csf = construct_csf(keys, values, verbose=1)
+    csf = construct_csf(keys, values, verbose=0)
 
-    # for key, value in zip(keys, values):
-    #     assert csf.query(key) == value
+    for key, value in zip(keys, values):
+        print(csf.query(key), value)
+        # assert csf.query(key) == value
+
+    # index = 0
+    # query_key, query_value = keys[index], values[index]
+    # print(f"decoding key {query_key}: should map to {query_value}")
+    # print("Querying csf with key gives: ", csf.query(query_key))
