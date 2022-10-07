@@ -48,24 +48,20 @@ class CSF:
 
         max_codelength = len(self.code_length_counts) - 1
         sections_to_xor = []
+        temp_seed = construction_seed
         for _ in range(3):
-            location = spookyhash.hash64(int.to_bytes(signature, 64, "big"), construction_seed) % solution_size
-            construction_seed += 1
+            location = spookyhash.hash64(int.to_bytes(signature, 64, "big"), temp_seed) % solution_size
+            temp_seed += 1
+
+            print(location)
 
             # we need to wrap around the solution
             if location + max_codelength >= solution_size:
-                print("WRAP")
-                print(solution[location:])
-                print(solution[:max_codelength - (solution_size - location) + 1])
                 sections_to_xor.append(solution[location:] + solution[:max_codelength - (solution_size - location) + 1])
             else:
                 sections_to_xor.append(solution[location:location + max_codelength + 1])
-            
-            print(solution)
-            print(location)
-            print(solution_size)
-            print(sections_to_xor)
-            
+
+        print("Sections to XOR: ", sections_to_xor)    
         section1, section2, section3 = sections_to_xor
         encoded_value = section1 ^ section2 ^ section3
 

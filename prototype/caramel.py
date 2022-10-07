@@ -47,14 +47,15 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
     equation_id = 0
     for i, key_hash in enumerate(key_hashes):
         start_var_locations = []
+        temp_seed = seed
         for _ in range(3):
             #TODO lets do sebastiano's trick here instead of modding
             #TODO lets write a custom hash function that generates three 64 bit 
             # hashes instead of hashing 3 times
             start_var_locations.append(
-                spookyhash.hash64(int.to_bytes(key_hash, 64, "big"), seed) % num_variables
+                spookyhash.hash64(int.to_bytes(key_hash, 64, "big"), temp_seed) % num_variables
             )
-            seed += 1
+            temp_seed += 1
         
         print("START LOCATIONS = ", start_var_locations)
         
@@ -175,6 +176,7 @@ def construct_csf(keys, values, verbose=0):
                     raise ValueError(f"Attempted to solve system {num_tries} "
                                      f"times without success.")
 
+    print("CODEDICT: ", codedict)
     return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, code_length_counts)
 
 
@@ -183,7 +185,10 @@ if __name__ == '__main__':
     values = [111, 222, 333, 444, 555]
     csf = construct_csf(keys, values, verbose=0)
 
-    print(csf.query("key_5"))
+    index = 4
+    query_key, query_value = keys[index], values[index]
+    print(f"decoding key {query_key} mapping to {query_value}")
+    print(csf.query(query_key))
 
     # keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
     # keys = [str(i) for i in range(1000000)]

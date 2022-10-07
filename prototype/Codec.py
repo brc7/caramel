@@ -100,7 +100,7 @@ def canonical_huffman(symbols, verbose = False):
     symbol_frequency_pairs.reverse()
     codeword_lengths.reverse()   
 
-    print("OUR CODEWORD LENGTHS:   ", codeword_lengths)
+    # print("OUR CODEWORD LENGTHS:   ", codeword_lengths)
 
     # TODO add length limiting to this algorithm
 
@@ -121,7 +121,7 @@ def canonical_huffman(symbols, verbose = False):
     if verbose:
         print(f"Canonical huffman produced codedict: {codedict}")
 
-    print("OUR COUNTS: ", code_length_counts)
+    # print("OUR COUNTS: ", code_length_counts)
 
     return codedict, code_length_counts, [pair[0] for pair in symbol_frequency_pairs]
 
