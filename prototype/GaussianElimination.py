@@ -24,7 +24,7 @@ equation. Overall this algorithm works as follows:
 Throws UnsolvableSystemException.
 '''
 
-def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
+def gaussian_elimination(dense_system, relevant_equation_ids, verbose=0):
     first_vars = {}
     for equation_id in relevant_equation_ids:
         first_vars[equation_id] = dense_system.getFirstVar(equation_id)
@@ -35,7 +35,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
             top_equation_id = relevant_equation_ids[top_equation_index]
             bot_equation_id = relevant_equation_ids[bot_equation_index]
 
-            if verbose:
+            if verbose >= 3:
                 print(f"\nStarting Iteration:")
                 print(f"  Top Equation: Id: {top_equation_id}, Equation: "
                       f"{dense_system.equationToStr(top_equation_id)} | "
@@ -48,7 +48,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
                 # Leading 1 in top is above the leading 1 in bot, so
                 # eliminate this variable from bot via xor operations.
                 dense_system.xorEquations(bot_equation_id, top_equation_id)
-                if verbose:
+                if verbose >= 3:
                     print(f"    Top and Bot have equal first vars. Set Bot = Top"
                           f" XOR Bot. Bot becomes: "
                           f"{dense_system.equationToStr(bot_equation_id)}")
@@ -60,7 +60,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
                 first_vars[bot_equation_id] = dense_system.getFirstVar(bot_equation_id)
 
             if first_vars[top_equation_id] > first_vars[bot_equation_id]:
-                if verbose:
+                if verbose >= 3:
                     print(f"    Swapping equations based on first vars.")
                     print(f"first vars: top: {first_vars[top_equation_id]}, bot: {first_vars[bot_equation_id]}")
 
@@ -72,7 +72,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
                 first_vars[top_equation_id] = first_vars[bot_equation_id]
                 first_vars[bot_equation_id] = temp_first_vars
 
-    if verbose:
+    if verbose >= 1:
         print("\nCompleted Echelon Form. Now doing back-substitution.")
 
     # TODO: how should we handle the solution?
@@ -82,7 +82,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=True):
     for i in range(len(relevant_equation_ids) - 1, -1, -1):
         equation_id = relevant_equation_ids[i]
         equation, constant = dense_system.getEquation(equation_id)
-        if verbose:
+        if verbose >= 3:
             print(f"  Updating solution based on equation {dense_system.equationToStr(equation_id)}")
         if dense_system.isIdentity(equation_id): 
             continue

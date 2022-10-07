@@ -8,7 +8,8 @@ def solve_lazy_from_dense(dense_equation_ids,
                           solved_equation_ids,
                           solved_variable_ids,
                           dense_system,
-                          dense_solution):
+                          dense_solution,
+                          verbose=0):
     # Solve the lazy gaussian elimination variables using the solutions to the
     # dense linear system (that were found using regular gaussian elimination).
     # 
@@ -24,8 +25,9 @@ def solve_lazy_from_dense(dense_equation_ids,
         value = np.bitwise_xor(constant,
                                scalarProduct(equation, dense_solution)) % 2
         value = np.bitwise_and(1, value)
-        print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
-              f": Value = {value}, constant = {constant}")
+        if verbose >= 2:
+            print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
+                f": Value = {value}, constant = {constant}")
         # TODO: This breaks encapsulation and is ugly - should be fixed by 
         # making the method public (or a helper function).
         dense_solution = dense_system._update_bitvector(dense_solution, 
@@ -37,7 +39,8 @@ def solve_lazy_from_dense(dense_equation_ids,
 def solve_peeled_from_dense(peeled_equation_ids,
                             var_solution_order,
                             dense_system,
-                            dense_solution):
+                            dense_solution,
+                            verbose=0):
     # Solve the peeled hypergraph representation of the linear system using the
     # solution to the unpeelable 2-core of the system (dense_solution).
     # 
@@ -54,8 +57,9 @@ def solve_peeled_from_dense(peeled_equation_ids,
         value = np.bitwise_xor(constant,
                                scalarProduct(equation, dense_solution)) % 2
         value = np.bitwise_and(1, value)
-        print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
-              f": Value = {value}, constant = {constant}")
+        if verbose >= 2:
+            print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
+                f": Value = {value}, constant = {constant}")
         # TODO: This breaks encapsulation and is ugly - should be fixed by 
         # making the method public (or a helper function).
         dense_solution = dense_system._update_bitvector(dense_solution,
