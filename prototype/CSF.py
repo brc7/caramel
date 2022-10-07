@@ -1,5 +1,5 @@
 import spookyhash
-import numpy as np
+from Codec import canonical_decode
 
 class CSF:
     def __init__(self,
@@ -20,7 +20,7 @@ class CSF:
         self._construction_seeds = construction_seeds
 
         self._symbols = symbols
-        self.code_length_counts = code_length_counts
+        self._code_length_counts = code_length_counts
 
     def query(self, key):
         #TODO this function repeats a lot of code. let's refactor this 
@@ -42,49 +42,27 @@ class CSF:
         # The general idea is to hash the signature 3 times to get 3 initial
         # locations in the solution bitarray. Then for each location, we will 
         # read a chunk of the solution bitarray the size of max_codelength. We 
-        # will then XOR these three chunks to get some bitarray. We will then 
-        # loop through this bitarray and report the first valid value from
-        # from decoding it with the canonical huffman decoder.  
+        # will then XOR these three chunks to get some encoded value. We will 
+        # then loop through this value and decode it with the canonical decoder.  
 
-        max_codelength = len(self.code_length_counts) - 1
+        max_codelength = len(self._code_length_counts) - 1
         sections_to_xor = []
         temp_seed = construction_seed
         for _ in range(3):
             location = spookyhash.hash64(int.to_bytes(signature, 64, "big"), temp_seed) % solution_size
             temp_seed += 1
 
-            print(location)
-
-            # we need to wrap around the solution
+            # wrap around in case the location we hashed to is too big
+            # TODO: can we optimize this wrap around?
             if location + max_codelength >= solution_size:
                 sections_to_xor.append(solution[location:] + solution[:max_codelength - (solution_size - location) + 1])
             else:
                 sections_to_xor.append(solution[location:location + max_codelength + 1])
 
-        print("Sections to XOR: ", sections_to_xor)    
         section1, section2, section3 = sections_to_xor
         encoded_value = section1 ^ section2 ^ section3
 
-        # decode the encoded_value
-        code = 0
-        first = 0
-        index = 0
-        for i in range(1, max_codelength + 1):
-            next_bit = encoded_value[i - 1]
-            code = np.bitwise_or(code, next_bit)
-
-            # number of codes of bitlength i
-            count = self.code_length_counts[i]
-
-            if code - count < first:
-                return self._symbols[index + (code - first)]
-            
-            index += count
-            first += count
-            first <<= 1
-            code <<= 1
-
-        return "ERROR HERE"
+        return canonical_decode(encoded_value, self._code_length_counts, self._symbols)
 
         
 

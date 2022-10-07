@@ -8,7 +8,6 @@ from BackSubstitution import solve_lazy_from_dense, solve_peeled_from_dense, spa
 from CSF import CSF
 import math
 import spookyhash
-import random
 
 
 def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
@@ -35,7 +34,6 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
     DELTA = 1.10 
 
     num_equations = sum(len(codedict[v]) for v in values)
-    print("Number of equations = ", num_equations)
     num_variables = math.ceil(num_equations * DELTA)
 
     if verbose >= 1:
@@ -56,9 +54,7 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
                 spookyhash.hash64(int.to_bytes(key_hash, 64, "big"), temp_seed) % num_variables
             )
             temp_seed += 1
-        
-        print("START LOCATIONS = ", start_var_locations)
-        
+                
         if verbose >= 2:
             print(f"  Constructing Equations for value: {values[i]} with code {codedict[values[i]]}")
 
@@ -176,7 +172,6 @@ def construct_csf(keys, values, verbose=0):
                     raise ValueError(f"Attempted to solve system {num_tries} "
                                      f"times without success.")
 
-    print("CODEDICT: ", codedict)
     return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, code_length_counts)
 
 
@@ -185,10 +180,10 @@ if __name__ == '__main__':
     values = [111, 222, 333, 444, 555]
     csf = construct_csf(keys, values, verbose=0)
 
-    index = 4
+    index = 0
     query_key, query_value = keys[index], values[index]
-    print(f"decoding key {query_key} mapping to {query_value}")
-    print(csf.query(query_key))
+    print(f"decoding key {query_key}: should map to {query_value}")
+    print("Querying csf with key gives: ", csf.query(query_key))
 
     # keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
     # keys = [str(i) for i in range(1000000)]
