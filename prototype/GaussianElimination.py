@@ -1,4 +1,5 @@
 import numpy as np
+import bitarray, bitarray.util
 from Modulo2System import DenseModulo2System, UnsolvableSystemException
 
 '''
@@ -37,12 +38,8 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=0):
 
             if verbose >= 3:
                 print(f"\nStarting Iteration:")
-                print(f"  Top Equation: Id: {top_equation_id}, Equation: "
-                      f"{dense_system.equationToStr(top_equation_id)} | "
-                      f"{dense_system.getEquation(top_equation_id)[1]}")
-                print(f"  Bot Equation: Id: {bot_equation_id}, Equation: "
-                      f"{dense_system.equationToStr(bot_equation_id)} | "
-                      f"{dense_system.getEquation(top_equation_id)[1]}")
+                print(f"  Top Equation: {dense_system.equationToStr(top_equation_id)}")
+                print(f"  Bot Equation: {dense_system.equationToStr(bot_equation_id)}")
 
             if first_vars[top_equation_id] == first_vars[bot_equation_id]:
                 # Leading 1 in top is above the leading 1 in bot, so
@@ -75,10 +72,9 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=0):
     if verbose >= 1:
         print("\nCompleted Echelon Form. Now doing back-substitution.")
 
-    # TODO: how should we handle the solution?
-    # Should this be a bitvector? Should we create it elsewhere and pass it in?
-    # Also should we do back-substitution externally?
-    solution = np.zeros(shape=dense_system.bitvector_size, dtype=dense_system.dtype)
+    solution_size = dense_system.shape[1]
+    solution = bitarray.bitarray(solution_size)
+    solution.setall(0)
     for i in range(len(relevant_equation_ids) - 1, -1, -1):
         equation_id = relevant_equation_ids[i]
         equation, constant = dense_system.getEquation(equation_id)
@@ -86,23 +82,14 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=0):
             print(f"  Updating solution based on equation {dense_system.equationToStr(equation_id)}")
         if dense_system.isIdentity(equation_id): 
             continue
-        if np.bitwise_xor(constant, scalarProduct(equation, solution)) == 1:
-            solution = dense_system._update_bitvector(solution, first_vars[equation_id])
+        solution[first_vars[equation_id]] = np.bitwise_xor(constant, scalarProduct(equation, solution))
     
     return solution
 
 
-def scalarProduct(array1, array2):
-    # returns the bitwise and of two numpy arrays (not just the integer values 
-    # but the number of 1s that overlap in both array1 and array2)
-    # TODO: can we optimize this function?
-    # TODO: should we make a Modulo2Equation class/utils file?
-    result = np.bitwise_and(array1, array2)
-    sum = 0
-    for number in result:
-        if number != 0:
-            sum += bin(number).count("1")
-    return sum
+def scalarProduct(bitarray1, bitarray2):
+    # return the number of common 1's between two bitarrays modded by 2
+    return bitarray.util.count_and(bitarray1, bitarray2) % 2
 
 
 def test_simple_gaussian_elimination():
@@ -118,7 +105,7 @@ def test_simple_gaussian_elimination():
                            participating_variables=vars, 
                            constant=constants[i])
 
-    assert system.bitArrayToStr(gaussian_elimination(system, [2, 0, 1])) == solution_str
+    assert gaussian_elimination(system, [2, 0, 1]).to01() == solution_str
 
 
 def test_gaussian_with_swaps():
@@ -134,7 +121,7 @@ def test_gaussian_with_swaps():
                            participating_variables=vars, 
                            constant=constants[i])
 
-    assert system.bitArrayToStr(gaussian_elimination(system, [0, 1, 2])) == solution_str
+    assert gaussian_elimination(system, [0, 1, 2]).to01() == solution_str
 
 
 def test_empty_system():
@@ -148,7 +135,7 @@ def test_empty_system():
         system.addEquation(equation_id=i, 
                            participating_variables=vars, 
                            constant=constants[i])
-    assert system.bitArrayToStr(gaussian_elimination(system, [])) == solution_str
+    assert gaussian_elimination(system, []).to01() == solution_str
 
 
 if __name__ == "__main__":
