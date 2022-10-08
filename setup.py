@@ -4,7 +4,7 @@ setup(
     name='caramel',
     version='0.1.0',
     scripts=['bin/construct.py'],
-    description='An package for constructing compressed static functions (CSFs)',
+    description='A package for constructing compressed static functions (CSFs)',
     long_description=open('README.md').read(),
     packages=find_packages(),
     install_requires=[
