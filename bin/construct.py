@@ -1,13 +1,16 @@
-from BucketedHashStore import BucketedHashStore
-from Codec import make_canonical_huffman
-from Modulo2System import DenseModulo2System, SparseModulo2System, UnsolvableSystemException
-from HypergraphPeeler import peel_hypergraph
-from LazyGaussianElimination import lazy_gaussian_elimination
-from GaussianElimination import gaussian_elimination
-from BackSubstitution import solve_lazy_from_dense, solve_peeled_from_dense, sparse_to_dense
 import math
-import spookyhash
 import random
+
+import spookyhash
+from caramel.BackSubstitution import (solve_lazy_from_dense,
+                                      solve_peeled_from_dense, sparse_to_dense)
+from caramel.BucketedHashStore import BucketedHashStore
+from caramel.Codec import make_canonical_huffman
+from caramel.GaussianElimination import gaussian_elimination
+from caramel.HypergraphPeeler import peel_hypergraph
+from caramel.LazyGaussianElimination import lazy_gaussian_elimination
+from caramel.Modulo2System import (DenseModulo2System, SparseModulo2System,
+                                   UnsolvableSystemException)
 
 
 def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):

@@ -1,6 +1,8 @@
-import numpy as np
 from collections import defaultdict
-from bitarray.util import canonical_huffman, canonical_decode, int2ba
+
+import numpy as np
+from bitarray.util import canonical_decode, canonical_huffman, int2ba
+
 
 def calculate_frequencies(symbols):
     # returns a map from symbol to frequency
@@ -110,23 +112,3 @@ def make_canonical_huffman(symbols, verbose = False):
         print(f"Canonical huffman produced codedict: {codedict}")
 
     return codedict #TODO we'll need to return other things for the decoder
-
-
-def test_canonical_huffman(values):
-    # our implementation
-    actual_codedict = make_canonical_huffman(values)
-
-    # bitarray's implementation
-    frequency_map = calculate_frequencies(values)
-    expected_codedict, counts, symbols = canonical_huffman(frequency_map)
-
-    # can't do == on the maps because two identical bitarrays aren't equal
-    for actual_key, expected_key in zip(sorted(actual_codedict.keys()), sorted(expected_codedict.keys())):
-        assert actual_key == expected_key
-        assert actual_codedict[actual_key].to01(), expected_codedict[expected_key].to01()
-
-
-if __name__ == "__main__":
-    for i in range(100):
-        symbols = np.random.randint(0, 20, size=30)    
-        test_canonical_huffman(symbols)

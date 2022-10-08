@@ -1,9 +1,9 @@
-import spookyhash
-
+import math
 # For usage example
 import random
-import string
-import math
+
+import spookyhash
+
 
 class BucketedHashStore:
     def __init__(self,
@@ -83,14 +83,15 @@ class BucketedHashStore:
         return zip(self._key_buckets, self._value_buckets)
 
 
-if __name__ == "__main__":
-    num_keys = 1000
-    keys = [str(i) for i in range(num_keys)]
-    values = [math.floor(math.log(random.randint(1, 100)))
-              for _ in range(num_keys)]
+# TODO: Clean this up
+# if __name__ == "__main__":
+#     num_keys = 1000
+#     keys = [str(i) for i in range(num_keys)]
+#     values = [math.floor(math.log(random.randint(1, 100)))
+#               for _ in range(num_keys)]
 
-    vectorizer = lambda s : bytes(s, 'utf-8')
-    hash_store = BucketedHashStore(vectorizer, keys, values)
-    buckets = hash_store.buckets()
-    for keys, values in buckets:
-        print(len(keys))
+#     vectorizer = lambda s : bytes(s, 'utf-8')
+#     hash_store = BucketedHashStore(vectorizer, keys, values)
+#     buckets = hash_store.buckets()
+#     for keys, values in buckets:
+#         print(len(keys))

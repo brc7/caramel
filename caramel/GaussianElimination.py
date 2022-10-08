@@ -1,6 +1,8 @@
+import bitarray
+import bitarray.util
 import numpy as np
-import bitarray, bitarray.util
-from Modulo2System import DenseModulo2System, UnsolvableSystemException
+
+from caramel.Modulo2System import UnsolvableSystemException
 
 '''
 We perform Gaussian Elimination by maintaining the state of each equation's 
@@ -91,55 +93,4 @@ def scalarProduct(bitarray1, bitarray2):
     # return the number of common 1's between two bitarrays modded by 2
     return bitarray.util.count_and(bitarray1, bitarray2) % 2
 
-
-def test_simple_gaussian_elimination():
-    matrix = [[0, 1, 2],
-              [1, 2],
-              [0, 2]]
-    constants = [1, 0, 1]
-    solution_str = "100"
-
-    system = DenseModulo2System(solution_size=len(solution_str))
-    for i, vars in enumerate(matrix):
-        system.addEquation(equation_id=i, 
-                           participating_variables=vars, 
-                           constant=constants[i])
-
-    assert gaussian_elimination(system, [2, 0, 1]).to01() == solution_str
-
-
-def test_gaussian_with_swaps():
-    matrix = [[1, 34],
-              [0, 1, 34],
-              [0, 34]]
-    constants = [0, 1, 1]
-    solution_str = "1" + "0" * 34
-
-    system = DenseModulo2System(solution_size=len(solution_str))
-    for i, vars in enumerate(matrix):
-        system.addEquation(equation_id=i, 
-                           participating_variables=vars, 
-                           constant=constants[i])
-
-    assert gaussian_elimination(system, [0, 1, 2]).to01() == solution_str
-
-
-def test_empty_system():
-    matrix = [[1, 34],
-              [0, 1, 34],
-              [0, 34]]
-    constants = [0, 1, 1]
-    solution_str = "0" * 35 
-    system = DenseModulo2System(solution_size=len(solution_str))
-    for i, vars in enumerate(matrix):
-        system.addEquation(equation_id=i, 
-                           participating_variables=vars, 
-                           constant=constants[i])
-    assert gaussian_elimination(system, []).to01() == solution_str
-
-
-if __name__ == "__main__":
-    test_simple_gaussian_elimination()
-    test_gaussian_with_swaps()
-    test_empty_system()
     
