@@ -1,11 +1,8 @@
-import numpy as np
 from typing import List
+
+import numpy as np
 from bitarray import bitarray
 
-# For usage example
-import random
-import string
-import math
 
 class SparseModulo2System:
     def __init__(self,
