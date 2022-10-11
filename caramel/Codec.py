@@ -1,5 +1,5 @@
-import numpy as np
 from collections import defaultdict
+import numpy as np
 import bitarray.util
 
 def calculate_frequencies(symbols):
