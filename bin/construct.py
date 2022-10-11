@@ -5,6 +5,7 @@ import spookyhash
 from caramel.BackSubstitution import (solve_lazy_from_dense,
                                       solve_peeled_from_dense, sparse_to_dense)
 from caramel.BucketedHashStore import BucketedHashStore
+from caramel.CSF import CSF
 from caramel.Codec import canonical_huffman
 from caramel.GaussianElimination import gaussian_elimination
 from caramel.HypergraphPeeler import peel_hypergraph
@@ -37,7 +38,6 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
     DELTA = 1.10 
 
     num_equations = sum(len(codedict[v]) for v in values)
-    print("Number of equations = ", num_equations)
     num_variables = math.ceil(num_equations * DELTA)
 
     if verbose >= 1:
@@ -49,15 +49,16 @@ def construct_modulo2_system(key_hashes, values, codedict, seed, verbose=0):
     equation_id = 0
     for i, key_hash in enumerate(key_hashes):
         start_var_locations = []
+        temp_seed = seed
         for _ in range(3):
             #TODO lets do sebastiano's trick here instead of modding
             #TODO lets write a custom hash function that generates three 64 bit 
             # hashes instead of hashing 3 times
             start_var_locations.append(
-                spookyhash.hash64(int.to_bytes(key_hash, 64, "big"), seed) % num_variables
+                spookyhash.hash64(int.to_bytes(key_hash, 64, "big"), temp_seed) % num_variables
             )
-            seed += 1
-        
+            temp_seed += 1
+                
         if verbose >= 2:
             print(f"  Constructing Equations for value: {values[i]} with code {codedict[values[i]]}")
 
@@ -135,13 +136,18 @@ def construct_csf(keys, values, verbose=0):
 		A csf structure supporting the .query(key) method.
     """
 
-    vectorizer = lambda s : bytes(s, 'utf-8')
     # The code dict needs to be the same for all the partition-CSFs.
-    codedict, code_length_counts, sorted_symbols = canonical_huffman(values, verbose=verbose)
+    codedict, code_length_counts, symbols = canonical_huffman(values, verbose=verbose)
+
+    vectorizer = lambda s : bytes(s, 'utf-8')
     hash_store = BucketedHashStore(vectorizer, keys, values)
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
 
+
+    construction_seeds = []
+    solutions = []
+    solution_sizes = []
     for key_hashes, values in hash_store.buckets():
         if verbose >= 1:
             print(f"Solving system for {len(key_hashes)} key-value pairs.")
@@ -156,6 +162,9 @@ def construct_csf(keys, values, verbose=0):
                                                          seed,
                                                          verbose=verbose)
                 solution = solve_modulo2_system(sparse_system, verbose=verbose)
+                solutions.append(solution)
+                solution_sizes.append(sparse_system.shape[1])
+                construction_seeds.append(seed)
                 break
             except UnsolvableSystemException as e:
                 # system construction increments the seed and hashes 3 times, 
@@ -166,20 +175,28 @@ def construct_csf(keys, values, verbose=0):
                 if max_num_attempts == num_tries:
                     raise ValueError(f"Attempted to solve system {num_tries} "
                                      f"times without success.")
-    return solution
+
+    return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, code_length_counts)
 
 
 if __name__ == '__main__':
     keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
     values = [111, 222, 333, 444, 555]
+    csf = construct_csf(keys, values, verbose=0)
 
-    # keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
-    keys = [str(i) for i in range(1000000)]
+    keys = [str(i) for i in range(10)]
     random.seed(41)
     values = [math.floor(math.log(random.randint(1, 100)))
               for _ in range(len(keys))]
 
-    csf = construct_csf(keys, values, verbose=1)
+    print(keys)
+    print(values)
+
+    csf = construct_csf(keys, values, verbose=0)
+
+    for key, value in zip(keys, values):
+        print(csf.query(key), value)
+        # assert csf.query(key) == value
 
     # for key, value in zip(keys, values):
     #     assert csf.query(key) == value
