@@ -5,7 +5,7 @@ import spookyhash
 from caramel.BackSubstitution import (solve_lazy_from_dense,
                                       solve_peeled_from_dense, sparse_to_dense)
 from caramel.BucketedHashStore import BucketedHashStore
-from caramel.Codec import make_canonical_huffman
+from caramel.Codec import canonical_huffman
 from caramel.GaussianElimination import gaussian_elimination
 from caramel.HypergraphPeeler import peel_hypergraph
 from caramel.LazyGaussianElimination import lazy_gaussian_elimination
@@ -137,7 +137,7 @@ def construct_csf(keys, values, verbose=0):
 
     vectorizer = lambda s : bytes(s, 'utf-8')
     # The code dict needs to be the same for all the partition-CSFs.
-    codedict = make_canonical_huffman(values, verbose=verbose)
+    codedict, code_length_counts, sorted_symbols = canonical_huffman(values, verbose=verbose)
     hash_store = BucketedHashStore(vectorizer, keys, values)
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
