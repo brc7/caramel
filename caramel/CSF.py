@@ -1,6 +1,6 @@
 import spookyhash
-from Codec import canonical_decode
-from BucketedHashStore import get_bucket_id
+from caramel.Codec import canonical_decode
+from caramel.BucketedHashStore import get_bucket_id
 
 class CSF:
     def __init__(self,
