@@ -3,7 +3,8 @@ import random
 
 import spookyhash
 from caramel.BackSubstitution import (solve_lazy_from_dense,
-                                      solve_peeled_from_dense, sparse_to_dense)
+                                      solve_peeled_from_dense, sparse_to_dense,
+                                      scalarProduct)
 from caramel.BucketedHashStore import BucketedHashStore
 from caramel.CSF import CSF
 from caramel.Codec import canonical_huffman
@@ -100,9 +101,9 @@ def solve_modulo2_system(sparse_system, verbose=0):
     state = lazy_gaussian_elimination(sparse_system,
                                       unpeeled_ids,
                                       verbose=verbose-1)
-    dense_ids, solved_ids, solved_vars, _ = state
-    # Un-performant hack (large memory)
-    dense_system = sparse_to_dense(sparse_system)
+    dense_ids, solved_ids, solved_vars, dense_system = state
+    # # Un-performant hack (large memory)
+    # dense_system = sparse_to_dense(sparse_system)
     if verbose >= 1:
         print(f"Lazily solved {len(solved_ids)} equations. ("
               f"{100 * len(solved_ids) / sparse_system.shape[0]:.2f}% of total)")
@@ -120,6 +121,15 @@ def solve_modulo2_system(sparse_system, verbose=0):
     solution = solve_peeled_from_dense(
         peeled_ids, var_order, dense_system, solution)
     # 6. Done. We can return the dense solution
+
+    # Check the solution
+    original_system = sparse_to_dense(sparse_system)
+    # Do the inner products explicitly for each row
+    for equation_id in original_system.equation_ids:
+        equation, constant = original_system.getEquation(equation_id)
+        result = scalarProduct(equation, solution) % 2
+        print(f"Equation {equation_id}: {result}, {constant}")
+
     return solution
 
 
@@ -192,7 +202,7 @@ if __name__ == '__main__':
     print(keys)
     print(values)
 
-    csf = construct_csf(keys, values, verbose=0)
+    csf = construct_csf(keys, values, verbose=10)
 
     for key, value in zip(keys, values):
         print(csf.query(key), value)

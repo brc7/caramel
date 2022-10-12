@@ -62,7 +62,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     #   gaussian elimination.
     num_equations, num_variables = sparse_system.shape
     var_to_equations, equation_priority, variable_weight, dense_system = \
-        construct_dense_system(sparse_system, equation_ids)
+        construct_dense_system(sparse_system)
     
     if verbose >= 2:
         print(f"System ({num_equations} equations, {num_variables} variables)")
@@ -115,6 +115,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                       f"({num_remaining_equations:d} equations remaining).")
             # Mark variable as no longer idle
             idle_variable_indicator[variable_id] = 0
+            print(idle_variable_indicator)
 
             if verbose >= 3:
                 active_variable_ids.append(variable_id)
@@ -154,7 +155,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                 # We need to find the pivot - the variable_id of the only
                 # remaining idle variable in the equation.
                 equation, constant = dense_system.getEquation(equation_id)
-                variable_id = idle_variable_indicator.find(1)
+                variable_id = (equation & idle_variable_indicator).find(1)
 
                 if verbose >= 2:
                     print(f"Equation {equation_id:d} is solved by variable "
@@ -189,7 +190,8 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     return state
 
 
-def construct_dense_system(sparse_system, equation_ids):
+def construct_dense_system(sparse_system):
+    equation_ids = sparse_system.equation_ids
     num_equations, num_variables = sparse_system.shape
     # The weight is the number of sparse equations containing variable_id.
     variable_weight = np.zeros(shape=num_variables, dtype=int)
