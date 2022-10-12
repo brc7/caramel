@@ -44,7 +44,3 @@ def test_modulo2_solver():
             pass
     
     print(f"Produced correct solutions for {solved_count} / {num_iters} matrices.")
-
-
-if __name__ == "__main__":
-    test_modulo2_solver()
