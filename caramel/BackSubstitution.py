@@ -36,7 +36,7 @@ def solve_lazy_from_dense(dense_equation_ids,
 
 def solve_peeled_from_dense(peeled_equation_ids,
                             var_solution_order,
-                            dense_system,
+                            sparse_system,
                             dense_solution,
                             verbose=0):
     # Solve the peeled hypergraph representation of the linear system using the
@@ -50,10 +50,12 @@ def solve_peeled_from_dense(peeled_equation_ids,
 
     for equation_id, variable_id in zip(peeled_equation_ids, var_solution_order):
         # Update dense_solution to include these.
-        equation, constant = dense_system.getEquation(equation_id)
-        # TODO: pPrformance tuning, this is highly inefficient
-        value = np.bitwise_xor(constant,
-                               scalarProduct(equation, dense_solution)) % 2
+        participating_vars, constant = sparse_system.getEquation(equation_id)
+        product = 0
+        for variable in participating_vars:
+            product += dense_solution[variable]
+        # TODO: Performance tuning, this is highly inefficient
+        value = np.bitwise_xor(constant, product) % 2
         value = np.bitwise_and(1, value)
         if verbose >= 2:
             print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"
@@ -68,8 +70,18 @@ def sparse_to_dense(sparse_system, equation_ids=None):
     if equation_ids is None:
         equation_ids = sparse_system.equation_ids
     for equation_id in equation_ids:
-        vars_to_add, constant = sparse_system.getEquation(equation_id)
+        participating_vars, constant = sparse_system.getEquation(equation_id)
+        # We should only add a variable to the equation in the dense system if
+        # it appears an odd number of times. This is because we compute output
+        # as XOR(solution[hash_1], solution[hash_2] ...). If hash_1 = hash_2 = 
+        # variable_id, then XOR(solution[hash_1], solution[hash_2]) = 0 and
+        # the variable_id did not actually participate in the solution.
+        vars_to_add = set()
+        for variable_id in participating_vars:
+            if variable_id not in vars_to_add:
+                vars_to_add.add(variable_id)
+            else:
+                vars_to_add.remove(variable_id)
         dense_system.addEquation(equation_id, list(vars_to_add), constant)
     return dense_system
-
 

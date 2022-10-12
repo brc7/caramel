@@ -136,7 +136,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                 if verbose >= 2:
                     print(f"Equation {equation_id:d} has no idle variables.")
                 equation, constant = dense_system.getEquation(equation_id)
-                equation_is_nonempty = np.sum(equation)
+                equation_is_nonempty = equation.any() # np.sum(equation)
                 if equation_is_nonempty:
                     # Since priority is 0, all variables are active.
                     dense_equation_ids.append(equation_id)
@@ -154,7 +154,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                 # We need to find the pivot - the variable_id of the only
                 # remaining idle variable in the equation.
                 equation, constant = dense_system.getEquation(equation_id)
-                variable_id = idle_variable_indicator.find(1)
+                variable_id = (equation & idle_variable_indicator).find(1)
 
                 if verbose >= 2:
                     print(f"Equation {equation_id:d} is solved by variable "
@@ -170,6 +170,9 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                         equation_priority[other_equation_id] -= 1
                         if equation_priority[other_equation_id] == 1:
                             sparse_equation_ids.append(other_equation_id)
+                        if equation_priority[other_equation_id] == 0:
+                            # Check if solvable or identity?
+                            pass
                         if verbose >= 2:
                             print(f"Adding equation {equation_id:d} to "
                                   f"equation {other_equation_id:d}.")
