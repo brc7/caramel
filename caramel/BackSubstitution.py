@@ -36,7 +36,7 @@ def solve_lazy_from_dense(dense_equation_ids,
 
 def solve_peeled_from_dense(peeled_equation_ids,
                             var_solution_order,
-                            dense_system,
+                            sparse_system,
                             dense_solution,
                             verbose=0):
     # Solve the peeled hypergraph representation of the linear system using the
@@ -50,10 +50,12 @@ def solve_peeled_from_dense(peeled_equation_ids,
 
     for equation_id, variable_id in zip(peeled_equation_ids, var_solution_order):
         # Update dense_solution to include these.
-        equation, constant = dense_system.getEquation(equation_id)
-        # TODO: pPrformance tuning, this is highly inefficient
-        value = np.bitwise_xor(constant,
-                               scalarProduct(equation, dense_solution)) % 2
+        participating_vars, constant = sparse_system.getEquation(equation_id)
+        product = 0
+        for variable in participating_vars:
+            product += dense_solution[variable]
+        # TODO: Performance tuning, this is highly inefficient
+        value = np.bitwise_xor(constant, product) % 2
         value = np.bitwise_and(1, value)
         if verbose >= 2:
             print(f"[Equation {equation_id}] solving for [Variable {variable_id}]"

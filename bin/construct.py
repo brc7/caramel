@@ -119,7 +119,7 @@ def solve_modulo2_system(sparse_system, verbose=0):
         dense_ids, solved_ids, solved_vars, dense_system, solution)
     # 5. Back-substitute the peeled variables.
     solution = solve_peeled_from_dense(
-        peeled_ids, var_order, dense_system, solution)
+        peeled_ids, var_order, sparse_system, solution)
     # 6. Done. We can return the dense solution
 
     # Check the solution
@@ -192,7 +192,10 @@ def construct_csf(keys, values, verbose=0):
 if __name__ == '__main__':
     keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
     values = [111, 222, 333, 444, 555]
-    csf = construct_csf(keys, values, verbose=0)
+    try:
+        csf = construct_csf(keys, values, verbose=0)
+    except:
+        pass
 
     keys = [str(i) for i in range(10)]
     random.seed(41)

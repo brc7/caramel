@@ -89,11 +89,10 @@ def test_peeled_from_dense_solvable_system(verbose=0):
         print("Solution (after gaussian elimination): ")
         print(dense_solution.to01())
     except UnsolvableSystemException as e:
-        print("SAD")
         return False
 
     dense_solution = solve_peeled_from_dense(
-        peeled_ids, var_order, dense_system, dense_solution)
+        peeled_ids, var_order, sparse_system, dense_solution)
 
     print("Solution (after peeling back-substitution): ")
     print(dense_solution.to01())

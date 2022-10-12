@@ -62,7 +62,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     #   gaussian elimination.
     num_equations, num_variables = sparse_system.shape
     var_to_equations, equation_priority, variable_weight, dense_system = \
-        construct_dense_system(sparse_system)
+        construct_dense_system(sparse_system, equation_ids)
     
     if verbose >= 2:
         print(f"System ({num_equations} equations, {num_variables} variables)")
@@ -115,7 +115,6 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                       f"({num_remaining_equations:d} equations remaining).")
             # Mark variable as no longer idle
             idle_variable_indicator[variable_id] = 0
-            print(idle_variable_indicator)
 
             if verbose >= 3:
                 active_variable_ids.append(variable_id)
@@ -137,7 +136,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                 if verbose >= 2:
                     print(f"Equation {equation_id:d} has no idle variables.")
                 equation, constant = dense_system.getEquation(equation_id)
-                equation_is_nonempty = np.sum(equation)
+                equation_is_nonempty = equation.any() # np.sum(equation)
                 if equation_is_nonempty:
                     # Since priority is 0, all variables are active.
                     dense_equation_ids.append(equation_id)
@@ -171,6 +170,9 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                         equation_priority[other_equation_id] -= 1
                         if equation_priority[other_equation_id] == 1:
                             sparse_equation_ids.append(other_equation_id)
+                        if equation_priority[other_equation_id] == 0:
+                            # Check if solvable or identity?
+                            pass
                         if verbose >= 2:
                             print(f"Adding equation {equation_id:d} to "
                                   f"equation {other_equation_id:d}.")
@@ -190,8 +192,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
     return state
 
 
-def construct_dense_system(sparse_system):
-    equation_ids = sparse_system.equation_ids
+def construct_dense_system(sparse_system, equation_ids):
     num_equations, num_variables = sparse_system.shape
     # The weight is the number of sparse equations containing variable_id.
     variable_weight = np.zeros(shape=num_variables, dtype=int)
