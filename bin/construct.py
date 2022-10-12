@@ -1,7 +1,9 @@
 import math
 import random
+import time
 
 import spookyhash
+import numpy as np
 from caramel.BackSubstitution import (solve_lazy_from_dense,
                                       solve_peeled_from_dense, sparse_to_dense,
                                       scalarProduct)
@@ -128,7 +130,6 @@ def solve_modulo2_system(sparse_system, verbose=0):
     for equation_id in original_system.equation_ids:
         equation, constant = original_system.getEquation(equation_id)
         result = scalarProduct(equation, solution) % 2
-        print(f"Equation {equation_id}: {result}, {constant}")
 
     return solution
 
@@ -189,27 +190,36 @@ def construct_csf(keys, values, verbose=0):
     return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, code_length_counts)
 
 
+def empirical_entropy(x):
+	unique_values, unique_counts = np.unique(x, return_counts=True)
+	num_entries = np.sum(unique_counts)
+
+	sorted_indices = unique_counts.argsort()
+	sorted_values = unique_values[sorted_indices[::-1]]
+	sorted_counts = unique_counts[sorted_indices[::-1]]
+	sorted_probs = sorted_counts / num_entries
+
+	return -1 * np.sum(sorted_probs * np.log2(sorted_probs))
+
+
 if __name__ == '__main__':
     keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
     values = [111, 222, 333, 444, 555]
-    try:
-        csf = construct_csf(keys, values, verbose=0)
-    except:
-        pass
+    csf = construct_csf(keys, values, verbose=0)
 
-    keys = [str(i) for i in range(10)]
+    keys = [str(i) for i in range(10000)]
     random.seed(41)
-    values = [math.floor(math.log(random.randint(1, 100)))
+    values = [math.floor(100 * math.log(random.randint(1, 10000)))
               for _ in range(len(keys))]
 
-    print(keys)
-    print(values)
-
-    csf = construct_csf(keys, values, verbose=10)
+    t0 = time.time()
+    csf = construct_csf(keys, values, verbose=0)
+    t1 = time.time()
 
     for key, value in zip(keys, values):
-        print(csf.query(key), value)
-        # assert csf.query(key) == value
+        assert csf.query(key) == value
 
-    # for key, value in zip(keys, values):
-    #     assert csf.query(key) == value
+    print(f"{len(keys):d} key-value pairs.")
+    print(f"{len(np.unique(values)):d} unique values.")
+    print(f"Entropy = {empirical_entropy(values):.4f} bits.")
+    print(f"Construction took {t1 - t0:.2f} seconds. ")
