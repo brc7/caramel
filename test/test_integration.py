@@ -5,24 +5,18 @@ from caramel.Modulo2System import SparseModulo2System, UnsolvableSystemException
 from bin.construct import solve_modulo2_system
 
 
-def create_random_matrix():
+def create_random_sparse_system():
     num_equations = 10
     num_variables = 11
 
     sparse_system = SparseModulo2System(num_variables)
-    numpy_matrix = np.zeros([num_equations, num_variables])
-    numpy_constants = np.zeros(num_equations)
 
     for equation_id in range(num_equations):
         indices = [random.randint(0, num_variables - 1) for _ in range(3)]
         constant = random.randint(0, 1)
         sparse_system.addEquation(equation_id, indices, constant)
 
-        for index in indices:
-            numpy_matrix[equation_id][index] = 1
-        numpy_constants[equation_id] = constant
-
-    return sparse_system, numpy_matrix, numpy_constants
+    return sparse_system
 
 
 def verify_solution(original_sparse_system, solution):
@@ -41,7 +35,7 @@ def test_modulo2_solver():
     num_iters = 1000
     for _ in range(num_iters):
         try:
-            sparse_system, numpy_matrix, numpy_constants = create_random_matrix()
+            sparse_system = create_random_sparse_system()
             solution = solve_modulo2_system(sparse_system)
             solution_is_correct = verify_solution(sparse_system, solution)
             assert solution_is_correct
