@@ -52,7 +52,7 @@ def gaussian_elimination(dense_system, relevant_equation_ids, verbose=0):
                           f" XOR Bot. Bot becomes: "
                           f"{dense_system.equationToStr(bot_equation_id)}")
                 if dense_system.isUnsolvable(top_equation_id):
-                    raise UnsolvableSystemException(f"Equation {equation_id:d}"
+                    raise UnsolvableSystemException(f"Equation {equation_id:d} "
                                 f"has all coefficients = 0 but constant is 1.")
                 # If bot is an identity, first_vars[bot_equation_id] is 
                 # num_variables (which skips the rest of the inner loop).

@@ -123,14 +123,6 @@ def solve_modulo2_system(sparse_system, verbose=0):
     solution = solve_peeled_from_dense(
         peeled_ids, var_order, sparse_system, solution)
     # 6. Done. We can return the dense solution
-
-    # Check the solution
-    original_system = sparse_to_dense(sparse_system)
-    # Do the inner products explicitly for each row
-    for equation_id in original_system.equation_ids:
-        equation, constant = original_system.getEquation(equation_id)
-        result = scalarProduct(equation, solution) % 2
-
     return solution
 
 

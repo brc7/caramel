@@ -141,7 +141,7 @@ def lazy_gaussian_elimination(sparse_system, equation_ids, verbose = 0):
                     # Since priority is 0, all variables are active.
                     dense_equation_ids.append(equation_id)
                 elif constant != 0:  # The equation is unsolvable.
-                    raise UnsolvableSystemException(f"Equation {equation_id:d}"
+                    raise UnsolvableSystemException(f"Equation {equation_id:d} "
                                      f"has all coefficients = "
                                      f"0 but constant is 1.")
                 else:
