@@ -20,15 +20,15 @@ class SparseModulo2System:
                     equation_id: int,
                     participating_variables: List[int],
                     constant: int):
-        if constant < 0 or constant > 1:
-            raise ValueError(f"Constant must be 0 or 1.")
-        if equation_id in self._equations:
-            raise ValueError(f"Equation id {equation_id:d} is already present "
-                              "in the system.")
-        for var in participating_variables:
-            if var >= self._solution_size:
-                raise ValueError(f"Invalid variable id: id {var:d} >= "
-                                 f"{self._solution_size:d}.")
+        # if constant < 0 or constant > 1:
+        #     raise ValueError(f"Constant must be 0 or 1.")
+        # if equation_id in self._equations:
+        #     raise ValueError(f"Equation id {equation_id:d} is already present "
+        #                       "in the system.")
+        # for var in participating_variables:
+        #     if var >= self._solution_size:
+        #         raise ValueError(f"Invalid variable id: id {var:d} >= "
+        #                          f"{self._solution_size:d}.")
         self._equations[equation_id] = participating_variables
         self._constants[equation_id] = constant
         for var in participating_variables:
@@ -64,15 +64,15 @@ class DenseModulo2System:
                     equation_id: int,
                     participating_variables: List[int],
                     constant: int):
-        if constant < 0 or constant > 1:
-            raise ValueError(f"Constant must be 0 or 1.")
-        if equation_id in self._equations:
-            raise ValueError(f"Equation id {equation_id:d} is already present "
-                              "in the system.")
-        for var in participating_variables:
-            if var >= self._solution_size:
-                raise ValueError(f"Invalid variable id: id {var:d} >= "
-                                 f"{self._solution_size:d}.")
+        # if constant < 0 or constant > 1:
+        #     raise ValueError(f"Constant must be 0 or 1.")
+        # if equation_id in self._equations:
+        #     raise ValueError(f"Equation id {equation_id:d} is already present "
+        #                       "in the system.")
+        # for var in participating_variables:
+        #     if var >= self._solution_size:
+        #         raise ValueError(f"Invalid variable id: id {var:d} >= "
+        #                          f"{self._solution_size:d}.")
 
         equation = bitarray(self._solution_size)
         equation.setall(0)
