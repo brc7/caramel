@@ -173,6 +173,7 @@ def construct_csf(keys, values, verbose=0):
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
 
+    #TODO does this blow up the memory too much? is there a better way?
     inputs = [(key_hashes, values, codedict) for key_hashes, values in hash_store.buckets()]
 
     with Pool() as pool:
