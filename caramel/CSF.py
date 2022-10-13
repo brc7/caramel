@@ -6,30 +6,25 @@ class CSF:
     def __init__(self,
                  bucketed_hash_store_vectorizer,
                  bucketed_hash_store_seed,
-                 solutions,
-                 solution_sizes,
-                 construction_seeds,
+                 solutions_and_seeds,
                  symbols,
                  code_length_counts):
 
         self._bucketed_hash_store_vectorizer = bucketed_hash_store_vectorizer
         self._bucketed_hash_store_seed = bucketed_hash_store_seed
 
-        # one solution per bucket
-        self._solutions = solutions
-        self._solution_sizes = solution_sizes
-        self._construction_seeds = construction_seeds
+        # a list, (solution, seed) for each CSF, one per bucket
+        self._solutions_and_seeds = solutions_and_seeds
 
         self._symbols = symbols
         self._code_length_counts = code_length_counts
 
     def query(self, key):
         signature = spookyhash.hash128(self._bucketed_hash_store_vectorizer(key), self._bucketed_hash_store_seed)
-        bucket_id = get_bucket_id(signature, num_buckets=len(self._solutions))
+        bucket_id = get_bucket_id(signature, num_buckets=len(self._solutions_and_seeds))
 
-        solution = self._solutions[bucket_id]
-        solution_size = self._solution_sizes[bucket_id]
-        construction_seed = self._construction_seeds[bucket_id]
+        solution, construction_seed = self._solutions_and_seeds[bucket_id]
+        solution_size = len(solution)
 
         # The general idea is to hash the signature 3 times to get 3 initial
         # locations in the solution bitarray. Then for each location, we will 
