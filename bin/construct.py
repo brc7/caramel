@@ -199,7 +199,7 @@ if __name__ == '__main__':
     # values = [111, 222, 333, 444, 555]
     # csf = construct_csf(keys, values, verbose=0)
 
-    num_samples = 1_000
+    num_samples = 1_000_000
     keys = [str(i) for i in range(num_samples)]
     random.seed(41)
     values = [random.randint(1, num_samples)
