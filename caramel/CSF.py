@@ -2,6 +2,7 @@ import spookyhash
 from caramel.Codec import canonical_decode
 from caramel.BucketedHashStore import get_bucket_id
 
+
 class CSF:
     def __init__(self,
                  bucketed_hash_store_vectorizer,
@@ -18,6 +19,16 @@ class CSF:
 
         self._symbols = symbols
         self._code_length_counts = code_length_counts
+
+    def size(self) -> int:
+        size = 0
+        import sys 
+        size += sys.getsizeof(self._bucketed_hash_store_vectorizer)
+        size += sys.getsizeof(self._bucketed_hash_store_seed)
+        size += sys.getsizeof(self._solutions_and_seeds)
+        size += sys.getsizeof(self._symbols)
+        size += sys.getsizeof(self._code_length_counts)
+        return size
 
     def query(self, key):
         signature = spookyhash.hash128(self._bucketed_hash_store_vectorizer(key), self._bucketed_hash_store_seed)

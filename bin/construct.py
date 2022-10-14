@@ -1,6 +1,7 @@
 import math
 import random
 import time
+from itertools import repeat
 from multiprocessing import Pool
 import spookyhash
 import numpy as np
@@ -126,7 +127,8 @@ def solve_modulo2_system(sparse_system, verbose=0):
     return solution
 
 
-def construct_csf_for_bucket(key_hashes, values, codedict, verbose=0):
+def construct_csf_for_bucket(bucket, codedict, verbose=0):
+    key_hashes, values = bucket
     if verbose >= 1:
         print(f"Solving system for {len(key_hashes)} key-value pairs.")
     seed = 0
@@ -173,12 +175,9 @@ def construct_csf(keys, values, verbose=0):
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
 
-    #TODO does this blow up the memory too much? is there a better way?
-    inputs = [(key_hashes, values, codedict) for key_hashes, values in hash_store.buckets()]
-
     with Pool() as pool:
         # a list, (solution, seed) for each CSF, one per bucket
-        solutions_and_seeds = pool.starmap(construct_csf_for_bucket, inputs)
+        solutions_and_seeds = pool.starmap(construct_csf_for_bucket, zip(hash_store.buckets(), repeat(codedict)))
 
     return CSF(vectorizer, hash_store.seed, solutions_and_seeds, symbols, code_length_counts)
 
@@ -196,21 +195,21 @@ def empirical_entropy(x):
 
 
 if __name__ == '__main__':
-    num_samples = 1_000_000
-    keys = [str(i) for i in range(num_samples)]
-    random.seed(41)
-    values = [random.randint(1, num_samples)
-              for _ in range(len(keys))]
+    f = open("1.4M_amazon_values.npy", "rb")
+    values = np.load(f)
+    keys = []
+    for i in range(values.shape[0]):
+        keys.append(str(i).ljust(len(str(values.shape[0])), "-"))
 
-    print(f"{len(keys):d} key-value pairs.")
-    print(f"{len(np.unique(values)):d} unique values.")
-    print(f"Entropy = {empirical_entropy(values):.4f} bits.")
-
-    t0 = time.perf_counter()
-    csf = construct_csf(keys, values, verbose=0)
-    t1 = time.perf_counter()
-
-    for key, value in zip(keys, values):
-        assert csf.query(key) == value
+    t0 = time.time()
+    csf = construct_csf(keys, values)
+    t1 = time.time()
 
     print(f"Construction complete. Elapsed {t1 - t0:.2f} seconds. ")
+    print(f"CSF Size is {csf.size()} bytes")
+
+    t0 = time.perf_counter()
+    csf.query(keys[0])
+    t1 = time.perf_counter()
+
+    print(f"Query time is {t1 - t0} seconds. ")

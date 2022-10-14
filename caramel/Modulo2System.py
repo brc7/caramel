@@ -20,15 +20,15 @@ class SparseModulo2System:
                     equation_id: int,
                     participating_variables: List[int],
                     constant: int):
-        if constant < 0 or constant > 1:
-            raise ValueError(f"Constant must be 0 or 1.")
-        if equation_id in self._equations:
-            raise ValueError(f"Equation id {equation_id:d} is already present "
-                              "in the system.")
-        for var in participating_variables:
-            if var >= self._solution_size:
-                raise ValueError(f"Invalid variable id: id {var:d} >= "
-                                 f"{self._solution_size:d}.")
+        # if constant < 0 or constant > 1:
+        #     raise ValueError(f"Constant must be 0 or 1.")
+        # if equation_id in self._equations:
+        #     raise ValueError(f"Equation id {equation_id:d} is already present "
+        #                       "in the system.")
+        # for var in participating_variables:
+        #     if var >= self._solution_size:
+        #         raise ValueError(f"Invalid variable id: id {var:d} >= "
+        #                          f"{self._solution_size:d}.")
         self._equations[equation_id] = participating_variables
         self._constants[equation_id] = constant
         for var in participating_variables:
@@ -64,15 +64,15 @@ class DenseModulo2System:
                     equation_id: int,
                     participating_variables: List[int],
                     constant: int):
-        if constant < 0 or constant > 1:
-            raise ValueError(f"Constant must be 0 or 1.")
-        if equation_id in self._equations:
-            raise ValueError(f"Equation id {equation_id:d} is already present "
-                              "in the system.")
-        for var in participating_variables:
-            if var >= self._solution_size:
-                raise ValueError(f"Invalid variable id: id {var:d} >= "
-                                 f"{self._solution_size:d}.")
+        # if constant < 0 or constant > 1:
+        #     raise ValueError(f"Constant must be 0 or 1.")
+        # if equation_id in self._equations:
+        #     raise ValueError(f"Equation id {equation_id:d} is already present "
+        #                       "in the system.")
+        # for var in participating_variables:
+        #     if var >= self._solution_size:
+        #         raise ValueError(f"Invalid variable id: id {var:d} >= "
+        #                          f"{self._solution_size:d}.")
 
         equation = bitarray(self._solution_size)
         equation.setall(0)
@@ -103,12 +103,8 @@ class DenseModulo2System:
         # Computes the XOR of the equation and constant associated with
         # equation_to_modify and equation_to_xor, and places the result into 
         # equation_to_modify.
-        c_to_modify = self._constants[equation_to_modify]
-        c_to_xor = self._constants[equation_to_xor]
-        new_c = np.bitwise_xor(c_to_modify, c_to_xor)
-
         self._equations[equation_to_modify] ^= self._equations[equation_to_xor]
-        self._constants[equation_to_modify] = new_c
+        self._constants[equation_to_modify] ^= self._constants[equation_to_xor]
 
     def swapEquations(self,
                      equation_id_1: int,
@@ -123,7 +119,8 @@ class DenseModulo2System:
 
     def getFirstVar(self, equation_id: int) -> int:
         # returns the first non-zero bit index in equation_id's equation
-        if not self._equations[equation_id].any():
+        first_var = self._equations[equation_id].find(1)
+        if first_var == -1: # the equation is all 0s
             if self._constants[equation_id]:
                 # In this case, we have a linearly dependent row
                 raise UnsolvableSystemException
@@ -131,7 +128,7 @@ class DenseModulo2System:
                 # In this case, we have an identity row
                 return self._solution_size
     
-        return self._equations[equation_id].find(1)
+        return first_var
 
     def isUnsolvable(self, equation_id: int) -> bool:
         # returns if the equation is all zeros and the constant is not 0
