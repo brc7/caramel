@@ -1,6 +1,7 @@
 import math
 import random
 import time
+from itertools import repeat
 from multiprocessing import Pool
 import spookyhash
 import numpy as np
@@ -126,7 +127,8 @@ def solve_modulo2_system(sparse_system, verbose=0):
     return solution
 
 
-def construct_csf_for_bucket(key_hashes, values, codedict, verbose=0):
+def construct_csf_for_bucket(bucket, codedict, verbose=0):
+    key_hashes, values = bucket
     if verbose >= 1:
         print(f"Solving system for {len(key_hashes)} key-value pairs.")
     seed = 0
@@ -173,12 +175,9 @@ def construct_csf(keys, values, verbose=0):
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
 
-    #TODO does this blow up the memory too much? is there a better way?
-    inputs = [(key_hashes, values, codedict) for key_hashes, values in hash_store.buckets()]
-
     with Pool() as pool:
         # a list, (solution, seed) for each CSF, one per bucket
-        solutions_and_seeds = pool.starmap(construct_csf_for_bucket, inputs)
+        solutions_and_seeds = pool.starmap(construct_csf_for_bucket, zip(hash_store.buckets(), repeat(codedict)))
 
     return CSF(vectorizer, hash_store.seed, solutions_and_seeds, symbols, code_length_counts)
 
