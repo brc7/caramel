@@ -1,7 +1,7 @@
 import math
 import random
 import time
-
+from multiprocessing import Pool
 import spookyhash
 import numpy as np
 from caramel.BackSubstitution import (solve_lazy_from_dense,
@@ -126,6 +126,32 @@ def solve_modulo2_system(sparse_system, verbose=0):
     return solution
 
 
+def construct_csf_for_bucket(key_hashes, values, codedict, verbose=0):
+    if verbose >= 1:
+        print(f"Solving system for {len(key_hashes)} key-value pairs.")
+    seed = 0
+    max_num_attempts = 0
+    num_tries = 10
+    while True:
+        try:
+            sparse_system = construct_modulo2_system(key_hashes,
+                                                        values,
+                                                        codedict,
+                                                        seed,
+                                                        verbose=verbose)
+            solution = solve_modulo2_system(sparse_system, verbose=verbose)
+            return solution, seed
+        except UnsolvableSystemException as e:
+            # system construction increments the seed and hashes 3 times, 
+            # we add 3 here to ensure hashes are unique across runs
+            seed += 3
+            max_num_attempts += 1
+
+            if max_num_attempts == num_tries:
+                raise ValueError(f"Attempted to solve system {num_tries} "
+                                    f"times without success.")
+
+
 def construct_csf(keys, values, verbose=0):
     """
     Constructs a compressed static function. This implementation sacrifices a 
@@ -147,39 +173,14 @@ def construct_csf(keys, values, verbose=0):
     if verbose >= 1:
         print(f"Divided keys into {len(list(hash_store.buckets()))} buckets")
 
+    #TODO does this blow up the memory too much? is there a better way?
+    inputs = [(key_hashes, values, codedict) for key_hashes, values in hash_store.buckets()]
 
-    construction_seeds = []
-    solutions = []
-    solution_sizes = []
-    for key_hashes, values in hash_store.buckets():
-        if verbose >= 1:
-            print(f"Solving system for {len(key_hashes)} key-value pairs.")
-        seed = 0
-        max_num_attempts = 0
-        num_tries = 10
-        while True:
-            try:
-                sparse_system = construct_modulo2_system(key_hashes,
-                                                         values,
-                                                         codedict,
-                                                         seed,
-                                                         verbose=verbose)
-                solution = solve_modulo2_system(sparse_system, verbose=verbose)
-                solutions.append(solution)
-                solution_sizes.append(sparse_system.shape[1])
-                construction_seeds.append(seed)
-                break
-            except UnsolvableSystemException as e:
-                # system construction increments the seed and hashes 3 times, 
-                # we add 3 here to ensure hashes are unique across runs
-                seed += 3
-                max_num_attempts += 1
+    with Pool() as pool:
+        # a list, (solution, seed) for each CSF, one per bucket
+        solutions_and_seeds = pool.starmap(construct_csf_for_bucket, inputs)
 
-                if max_num_attempts == num_tries:
-                    raise ValueError(f"Attempted to solve system {num_tries} "
-                                     f"times without success.")
-
-    return CSF(vectorizer, hash_store.seed, solutions, solution_sizes, construction_seeds, symbols, code_length_counts)
+    return CSF(vectorizer, hash_store.seed, solutions_and_seeds, symbols, code_length_counts)
 
 
 def empirical_entropy(x):
@@ -195,23 +196,21 @@ def empirical_entropy(x):
 
 
 if __name__ == '__main__':
-    keys = ["key_1", "key_2", "key_3", "key_4", "key_5"]
-    values = [111, 222, 333, 444, 555]
-    csf = construct_csf(keys, values, verbose=0)
-
-    keys = [str(i) for i in range(10000)]
+    num_samples = 1_000_000
+    keys = [str(i) for i in range(num_samples)]
     random.seed(41)
-    values = [math.floor(100 * math.log(random.randint(1, 10000)))
+    values = [random.randint(1, num_samples)
               for _ in range(len(keys))]
-
-    t0 = time.time()
-    csf = construct_csf(keys, values, verbose=0)
-    t1 = time.time()
-
-    for key, value in zip(keys, values):
-        assert csf.query(key) == value
 
     print(f"{len(keys):d} key-value pairs.")
     print(f"{len(np.unique(values)):d} unique values.")
     print(f"Entropy = {empirical_entropy(values):.4f} bits.")
-    print(f"Construction took {t1 - t0:.2f} seconds. ")
+
+    t0 = time.perf_counter()
+    csf = construct_csf(keys, values, verbose=0)
+    t1 = time.perf_counter()
+
+    for key, value in zip(keys, values):
+        assert csf.query(key) == value
+
+    print(f"Construction complete. Elapsed {t1 - t0:.2f} seconds. ")
